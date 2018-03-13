@@ -1,0 +1,7 @@
+apikey: "488659919:AAGd3Aj-mRZBg9sTANSvzhuGCdZrY7UOCKM"
+groups:
+    -1001153012150:
+        title_reset_delay: 10
+    -1001235265562:
+        title_prefix: "BGM NA"
+        title_reset_delay: 7200
