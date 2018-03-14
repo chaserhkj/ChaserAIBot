@@ -111,12 +111,11 @@ def setpic(bot, update):
         return
     gid = update.message.chat.id
     pic = msg.photo[-1].file_id
-    buf = BytesIO()
-    f = bot.get_file(pic)
-    f.download(out = buf)
-    buf.seek(0)
-    inputfile = InputFile({"photo": buf})
-    bot.set_chat_photo(chat_id=gid, photo=inputfile.data)
+    #buf = BytesIO()
+    #f = bot.get_file(pic)
+    #f.download(out = buf)
+    #buf.seek(0)
+    bot.set_chat_photo(chat_id=gid, photo=pic)
 
 @check_group
 @logged
