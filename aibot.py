@@ -160,6 +160,7 @@ updater.dispatcher.add_handler(CommandHandler("setpic", setpic))
 updater.dispatcher.add_handler(CommandHandler("pin", pin, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("unpin", unpin))
 
-updater.start_webhook(listen='127.0.0.1', port=9990, url_path='ai/'+tg_key, webhook_url='https://tgbot.chaserhkj.me/ai/'+tg_key)
+updater.start_webhook(listen='127.0.0.1', port=9990, url_path='ai/'+tg_key)
+updater.bot.set_webhook(url='https://tgbot.chaserhkj.me/ai/'+tg_key)
 updater.idle()
 
