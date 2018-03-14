@@ -100,8 +100,6 @@ def resettitle(bot, update):
 @check_group
 @logged
 def setpic(bot, update):
-    update.message.reply_text("Not Implemented")
-    return
     msg = update.message.reply_to_message
     if msg == None:
         update.message.reply_text("Usage:\n\nReply this command to the image that you wish to set as the group picture.\n")
@@ -111,11 +109,11 @@ def setpic(bot, update):
         return
     gid = update.message.chat.id
     pic = msg.photo[-1].file_id
-    #buf = BytesIO()
-    #f = bot.get_file(pic)
-    #f.download(out = buf)
-    #buf.seek(0)
-    bot.set_chat_photo(chat_id=gid, photo=pic)
+    buf = BytesIO()
+    f = bot.get_file(pic)
+    f.download(out = buf)
+    buf.seek(0)
+    bot.set_chat_photo(chat_id=gid, photo=buf)
 
 @check_group
 @logged
