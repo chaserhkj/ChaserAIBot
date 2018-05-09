@@ -9,7 +9,15 @@ logging.basicConfig(
 def logged(func):
     def logged_func(*argl, **argd):
         logging.getLogger().debug("Entering: " + func.__name__)
-        res = func(*argl, **argd)
+        try:
+            res = func(*argl, **argd)
+        except Exception as e:
+            if "update" in argd:
+                update = argd["update"]
+            else:
+                update = argl[1]
+            update.message.reply_text("Exception: {}".format(str(e)))
+            raise e
         logging.getLogger().debug("Exiting: " + func.__name__)
         return res
 
