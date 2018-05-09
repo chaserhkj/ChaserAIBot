@@ -187,7 +187,7 @@ def sendGIF(bot, cid, keyword, anime=True):
         })
     url = res.json()["results"][0]["media"][0]["gif"]["url"]
     bot.sendChatAction(chat_id=cid, action=telegram.ChatAction.UPLOAD_PHOTO)
-    bot.sendDocument(chat_id=cid, document=url)
+    bot.sendDocument(chat_id=cid, document=url, timeout=60)
 
 
 def action_gen(keyword, reply_text, mention_text, anime=True):
