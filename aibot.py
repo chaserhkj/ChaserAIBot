@@ -180,18 +180,21 @@ def sendGIF(bot, cid, keyword, anime=True):
         keyword = "anime {}".format(keyword)
     if not cid in gif_cache:
         gif_cache[cid] = set()
+    if not cid in result_cache:
+        result_cache[cid] = {}
     while True:
-        res = requests.get(
-            "https://api.tenor.com/v1/random",
-            params={
-                "key": tenorkey,
-                "anon_id": anonid,
-                "q": keyword,
-                "safesearch": "moderate",
-                "limit": 50
-            })
-        result_cache[cid] = iter(res.json()["results"])
-        for result in result_cache[cid]:
+        if not keyword in result_cache[cid]:
+            res = requests.get(
+                "https://api.tenor.com/v1/random",
+                params={
+                    "key": tenorkey,
+                    "anon_id": anonid,
+                    "q": keyword,
+                    "safesearch": "moderate",
+                    "limit": 50
+                })
+            result_cache[cid][keyword] = iter(res.json()["results"])
+        for result in result_cache[cid][keyword]:
             url = result["media"][0]["gif"]["url"]
             if not url in gif_cache[cid]:
                 gif_cache[cid].add(url)
