@@ -35,8 +35,10 @@ from telegram.ext import Updater, CommandHandler
 from io import BytesIO
 from telegram import InputFile
 import pytimeparse
-import safygiphy
-giphy = safygiphy.Giphy()
+import requests
+tenorkey = config["tenorkey"]
+res = requests.get("https://api.tenor.com/v1/anonid", params={"key": tenorkey})
+anonid = res.json()["anon_id"]
 updater = Updater(tg_key, workers=16)
 queue = updater.job_queue
 
@@ -174,8 +176,16 @@ def pin(bot, update, args):
 def sendGIF(bot, cid, keyword, anime=True):
     if anime:
         keyword = "anime {}".format(keyword)
-    res = giphy.random(tag=keyword)
-    url = res['data']['image_url']
+    res = requests.get(
+        "https://api.tenor.com/v1/random",
+        params={
+            "key": tenorkey,
+            "anon_id": anonid,
+            "q": keyword,
+            "safesearch": "moderate",
+            "limit": 1
+        })
+    url = res.json()["results"][0]["media"][0]["gif"]["url"]
     bot.sendChatAction(chat_id=cid, action=telegram.ChatAction.UPLOAD_PHOTO)
     bot.sendDocument(chat_id=cid, document=url)
 
