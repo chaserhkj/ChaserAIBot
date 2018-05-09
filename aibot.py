@@ -207,7 +207,7 @@ def sendGIF(bot, cid, keyword, anime=True):
                 def remove_cache(bot, job):
                     gif_cache[cid].remove(url)
 
-                queue.run_once(remove_cache, 3600)
+                queue.run_once(remove_cache, 1800)
                 bot.sendChatAction(
                     chat_id=cid, action=telegram.ChatAction.UPLOAD_PHOTO)
                 bot.sendDocument(chat_id=cid, document=url, timeout=60)
