@@ -24,7 +24,7 @@ actions:
         anime: True
     punch:
         keyword: "punch"
-        reply_text: "信不信我揍你"
+        reply_text: "信不信老娘揍你"
         mention_text: "狠狠的揍了你一拳"
         anime: True
     slap:
