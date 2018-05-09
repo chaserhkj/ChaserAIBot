@@ -141,7 +141,7 @@ def pin(bot, update, args):
     event = queue.run_once(unpin, delay)
     unpin_events[gid] = event
 
-def sendGIF(cid, keyword, anime = True):
+def sendGIF(bot, cid, keyword, anime = True):
     if anime:
         keyword = "anime {}".format(keyword)
     res = giphy.random(tag=keyword)
@@ -153,7 +153,7 @@ def sendGIF(cid, keyword, anime = True):
 def kiss(bot, update):
     msg = update.message.reply_to_message
     cid = update.message.chat.id
-    sendGIF(cid, "kiss")
+    sendGIF(bot, cid, "kiss")
     if msg == None:
         update.message.reply_text("亲亲你！")
         return
