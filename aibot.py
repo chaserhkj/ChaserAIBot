@@ -191,7 +191,7 @@ def sendGIF(bot, cid, keyword, anime=True):
                     "anon_id": anonid,
                     "q": keyword,
                     "safesearch": "moderate",
-                    "limit": 50
+                    "limit": 20
                 })
             result_cache[cid][keyword] = iter(res.json()["results"])
 
