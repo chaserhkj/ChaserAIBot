@@ -138,6 +138,16 @@ def pin(bot, update, args):
     event = queue.run_once(unpin, delay)
     unpin_events[gid] = event
 
+@logged
+def kiss(bot, update):
+    msg = update.message.reply_to_message
+    if msg == None:
+        update.message.reply_text("亲亲你！")
+        return
+    user = update.message.from_user
+    update.message.replay_text("[{} {}](tg://user?id={}) 亲了你一下！".format(user.first_name, user.last_name, user.id), parse_mode="Markdown")
+
+
 @check_group
 @logged
 def unpin(bot, update):
@@ -156,6 +166,7 @@ updater.dispatcher.add_handler(CommandHandler("resettitle", resettitle))
 updater.dispatcher.add_handler(CommandHandler("setpic", setpic))
 updater.dispatcher.add_handler(CommandHandler("pin", pin, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("unpin", unpin))
+updater.dispatcher.add_handler(CommandHandler("kiss", kiss))
 
 updater.start_webhook(listen='127.0.0.1', port=9990, url_path=tg_key)
 updater.bot.set_webhook(url='https://tgbot.chaserhkj.me/ai/'+tg_key)
