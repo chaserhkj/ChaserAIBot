@@ -207,6 +207,7 @@ def sendGIF(bot, cid, keyword, anime=True):
                     chat_id=cid, action=telegram.ChatAction.UPLOAD_PHOTO)
                 bot.sendDocument(chat_id=cid, document=url, timeout=60)
                 return
+        del result_cache[cid][keyword]
 
 
 def action_gen(keyword, reply_text, mention_text, anime=True):
