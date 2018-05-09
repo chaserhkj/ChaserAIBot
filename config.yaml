@@ -9,37 +9,37 @@ groups:
 actions:
     kiss:
         keyword: "kiss"
-        reply_text: "亲亲你！"
+        reply_text: "亲亲你！(*￣з￣)"
         mention_text: "亲了你一下！"
         anime: True
     hug:
         keyword: "hug"
-        reply_text: "抱抱你！"
+        reply_text: "抱抱你！(つ´∀｀)つ"
         mention_text: "抱了你一下！"
         anime: True
     pat:
         keyword: "pat"
-        reply_text: "摸摸头"
+        reply_text: "摸摸头(っ´ω`)ﾉ(╥ω╥)"
         mention_text: "摸了摸你的头，表示同情"
         anime: True
     punch:
         keyword: "punch"
-        reply_text: "信不信老娘揍你"
+        reply_text: "信不信老娘揍你(o￣∇￣)=◯)`ν゜)"
         mention_text: "狠狠的揍了你一拳"
         anime: True
     slap:
         keyword: "slap"
-        reply_text: "信不信老娘扇你一巴掌"
+        reply_text: "信不信老娘扇你一巴掌(♯▼皿▼)"
         mention_text: "狠狠的扇了你一巴掌"
         anime: True
     sleep:
         keyword: "sleep"
-        reply_text: "晚安，亲爱的"
+        reply_text: "晚安，亲爱的(´ω｀*)"
         mention_text: "向你道了晚安"
         anime: True
     tired:
         keyword: "tired"
-        reply_text: "很累吧"
+        reply_text: "很累吧( ´ ▽ ` )ﾉ"
         mention_text: "向你表示他很累"
         anime: True
 
