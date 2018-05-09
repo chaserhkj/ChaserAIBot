@@ -5,3 +5,15 @@ groups:
     -1001235265562:
         title_prefix: "BGM NA"
         title_reset_delay: 7200
+actions:
+    kiss:
+        keyword: "kiss"
+        reply_text: "亲亲你！"
+        mention_text: "亲了你一下！"
+        anime: True
+    hug:
+        keyword: "hug"
+        reply_text: "抱抱你！"
+        mention_text: "抱了你一下！"
+        anime: True
+

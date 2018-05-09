@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 
 def logged(func):
     def logged_func(*argl, **argd):
@@ -9,6 +12,7 @@ def logged(func):
         res = func(*argl, **argd)
         logging.getLogger().debug("Exiting: " + func.__name__)
         return res
+
     return logged_func
 
 
@@ -25,12 +29,13 @@ from telegram import InputFile
 import pytimeparse
 import safygiphy
 giphy = safygiphy.Giphy()
-updater = Updater(tg_key, workers = 16)
+updater = Updater(tg_key, workers=16)
 queue = updater.job_queue
 
 group_config = config["groups"]
 reset_events = {}
 unpin_events = {}
+
 
 def check_group(func):
     def new_func(*arg, **argd):
@@ -40,13 +45,16 @@ def check_group(func):
             func(*arg, **argd)
         else:
             update.message.reply_text("Current chat is not a group\n")
+
     return new_func
+
 
 def check_config(gid, key):
     if gid in group_config and key in group_config[gid]:
         return group_config[gid][key]
     else:
         return None
+
 
 @logged
 def start(bot, update):
@@ -58,6 +66,7 @@ def start(bot, update):
 def getgid(bot, update):
     chat = update.message.chat
     update.message.reply_text("Group ID is: {}\n".format(chat.id, chat.GROUP))
+
 
 @check_group
 @logged
@@ -78,13 +87,16 @@ def settitle(bot, update, args):
         if gid in reset_events:
             reset_events[gid].schedule_removal()
         reset_title = old_title if prefix == None else prefix
+
         def reset(bot, job):
             bot.set_chat_title(chat_id=gid, title=reset_title)
             del reset_events[gid]
+
         event = queue.run_once(reset, delay)
         reset_events[gid] = event
-        update.message.reply_text("Delayed reset is enabled for this group.\n\nTitle would be reset to {} after {} seconds.\n".format(reset_title, delay))
-
+        update.message.reply_text(
+            "Delayed reset is enabled for this group.\n\nTitle would be reset to {} after {} seconds.\n".
+            format(reset_title, delay))
 
 
 @check_group
@@ -100,12 +112,15 @@ def resettitle(bot, update):
         reset_events[gid].schedule_removal()
         del reset_events[gid]
 
+
 @check_group
 @logged
 def setpic(bot, update):
     msg = update.message.reply_to_message
     if msg == None:
-        update.message.reply_text("Usage:\n\nReply this command to the image that you wish to set as the group picture.\n")
+        update.message.reply_text(
+            "Usage:\n\nReply this command to the image that you wish to set as the group picture.\n"
+        )
         return
     if len(msg.photo) == 0:
         update.message.reply_text("Picture not found.\n")
@@ -114,51 +129,64 @@ def setpic(bot, update):
     pic = msg.photo[-1].file_id
     buf = BytesIO()
     f = bot.get_file(pic)
-    f.download(out = buf)
+    f.download(out=buf)
     buf.seek(0)
     bot.set_chat_photo(chat_id=gid, photo=buf)
+
 
 @check_group
 @logged
 def pin(bot, update, args):
     msg = update.message.reply_to_message
     if msg == None:
-        update.message.reply_text("Usage:\n\nReplying to the message you wish to pin.\n/pin [time to pin]\n")
+        update.message.reply_text(
+            "Usage:\n\nReplying to the message you wish to pin.\n/pin [time to pin]\n"
+        )
     gid = update.message.chat.id
     mid = msg.message_id
     force_notify = check_config(gid, "force_notify")
     disable_notify = not bool(force_notify)
-    bot.pin_chat_message(chat_id=gid, message_id=mid, disable_notification = disable_notify)
+    bot.pin_chat_message(
+        chat_id=gid, message_id=mid, disable_notification=disable_notify)
 
     if len(args) == 0:
         return
     delay = pytimeparse.parse(args[0])
     if gid in unpin_events:
         unpin_events[gid].schedule_removal()
+
     def unpin(bot, job):
         bot.unpin_chat_message(chat_id=gid)
         del unpin_events[gid]
+
     event = queue.run_once(unpin, delay)
     unpin_events[gid] = event
 
-def sendGIF(cid, keyword, anime = True):
+
+def sendGIF(cid, keyword, anime=True):
     if anime:
         keyword = "anime {}".format(keyword)
     res = giphy.random(tag=keyword)
     url = res['data']['image_url']
-    bot.sendChatAction(chat_id = cid, action = telegram.ChatAction.UPLOAD_PHOTO)
-    bot.sendDocument(chat_id = cid, document = url)
+    bot.sendChatAction(chat_id=cid, action=telegram.ChatAction.UPLOAD_PHOTO)
+    bot.sendDocument(chat_id=cid, document=url)
 
-@logged
-def kiss(bot, update):
-    msg = update.message.reply_to_message
-    cid = update.message.chat.id
-    sendGIF(cid, "kiss")
-    if msg == None:
-        update.message.reply_text("亲亲你！")
-        return
-    user = update.message.from_user
-    msg.reply_text("[{} {}](tg://user?id={}) 亲了你一下！".format(user.first_name, user.last_name, user.id), parse_mode="Markdown")
+
+def action_gen(keyword, reply_text, mention_text, anime=True):
+    def action(bot, update):
+        msg = update.message.reply_to_message
+        cid = update.message.chat.id
+        sendGIF(cid, keyword, anime)
+        if msg == None:
+            update.message.reply_text(reply_text)
+            return
+        user = update.message.from_user
+        msg.reply_text(
+            "[{} {}](tg://user?id={}) {}".format(
+                user.first_name, user.last_name, user.id, mention_text),
+            parse_mode="Markdown")
+
+    return logged(action)
 
 
 @check_group
@@ -171,17 +199,21 @@ def unpin(bot, update):
         del unpin_events[gid]
 
 
-
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
-updater.dispatcher.add_handler(CommandHandler("settitle", settitle, pass_args=True))
+updater.dispatcher.add_handler(
+    CommandHandler("settitle", settitle, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("resettitle", resettitle))
 updater.dispatcher.add_handler(CommandHandler("setpic", setpic))
 updater.dispatcher.add_handler(CommandHandler("pin", pin, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("unpin", unpin))
-updater.dispatcher.add_handler(CommandHandler("kiss", kiss))
+
+if "action" in config:
+    actions = config["action"]
+    for key in actions:
+        fact = action_gen(**actions[key])
+        updater.dispatcher.add_handler(CommandHandler(key, fact))
 
 updater.start_webhook(listen='127.0.0.1', port=9990, url_path=tg_key)
-updater.bot.set_webhook(url='https://tgbot.chaserhkj.me/ai/'+tg_key)
+updater.bot.set_webhook(url='https://tgbot.chaserhkj.me/ai/' + tg_key)
 updater.idle()
-
