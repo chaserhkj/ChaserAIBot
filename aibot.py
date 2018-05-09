@@ -45,6 +45,7 @@ queue = updater.job_queue
 group_config = config["groups"]
 reset_events = {}
 unpin_events = {}
+result_cache = {}
 gif_cache = {}
 
 
@@ -187,19 +188,22 @@ def sendGIF(bot, cid, keyword, anime=True):
                 "anon_id": anonid,
                 "q": keyword,
                 "safesearch": "moderate",
-                "limit": 1
+                "limit": 50
             })
-        url = res.json()["results"][0]["media"][0]["gif"]["url"]
-        if not url in gif_cache[cid]:
-            gif_cache[cid].add(url)
+        result_cache[cid] = iter(res.json()["results"])
+        for result in result_cache[cid]:
+            url = result["media"][0]["gif"]["url"]
+            if not url in gif_cache[cid]:
+                gif_cache[cid].add(url)
 
-            def remove_cache(bot, job):
-                gif_cache[cid].remove(url)
+                def remove_cache(bot, job):
+                    gif_cache[cid].remove(url)
 
-            queue.run_once(remove_cache, 3600)
-            break
-    bot.sendChatAction(chat_id=cid, action=telegram.ChatAction.UPLOAD_PHOTO)
-    bot.sendDocument(chat_id=cid, document=url, timeout=60)
+                queue.run_once(remove_cache, 3600)
+                bot.sendChatAction(
+                    chat_id=cid, action=telegram.ChatAction.UPLOAD_PHOTO)
+                bot.sendDocument(chat_id=cid, document=url, timeout=60)
+                return
 
 
 def action_gen(keyword, reply_text, mention_text, anime=True):
