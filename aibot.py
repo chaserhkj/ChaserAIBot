@@ -145,7 +145,7 @@ def kiss(bot, update):
         update.message.reply_text("亲亲你！")
         return
     user = update.message.from_user
-    update.message.replay_text("[{} {}](tg://user?id={}) 亲了你一下！".format(user.first_name, user.last_name, user.id), parse_mode="Markdown")
+    msg.reply_text("[{} {}](tg://user?id={}) 亲了你一下！".format(user.first_name, user.last_name, user.id), parse_mode="Markdown")
 
 
 @check_group
