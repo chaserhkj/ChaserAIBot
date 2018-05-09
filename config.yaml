@@ -47,9 +47,9 @@ actions:
         reply_text: "盯———— (◉ω◉)"
         mention_text: "悄悄的盯着你"
         anime: True
-    "911":
-        keyword: "call police"
-        reply_text: "我已经报警了( •̀⊿•́)ง"
-        mention_text: "向警方指认了你"
-        anime: False
+    mad:
+        keyword: "mad"
+        reply_text: "生气了？(* ￣︿￣)"
+        mention_text: "向你表示很生气"
+        anime: True
 
