@@ -163,7 +163,7 @@ def pin(bot, update, args):
     unpin_events[gid] = event
 
 
-def sendGIF(cid, keyword, anime=True):
+def sendGIF(bot, cid, keyword, anime=True):
     if anime:
         keyword = "anime {}".format(keyword)
     res = giphy.random(tag=keyword)
@@ -176,7 +176,7 @@ def action_gen(keyword, reply_text, mention_text, anime=True):
     def action(bot, update):
         msg = update.message.reply_to_message
         cid = update.message.chat.id
-        sendGIF(cid, keyword, anime)
+        sendGIF(bot, cid, keyword, anime)
         if msg == None:
             update.message.reply_text(reply_text)
             return
