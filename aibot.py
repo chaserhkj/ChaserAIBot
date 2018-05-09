@@ -45,6 +45,7 @@ queue = updater.job_queue
 group_config = config["groups"]
 reset_events = {}
 unpin_events = {}
+gif_cache = {}
 
 
 def check_group(func):
@@ -176,16 +177,27 @@ def pin(bot, update, args):
 def sendGIF(bot, cid, keyword, anime=True):
     if anime:
         keyword = "anime {}".format(keyword)
-    res = requests.get(
-        "https://api.tenor.com/v1/random",
-        params={
-            "key": tenorkey,
-            "anon_id": anonid,
-            "q": keyword,
-            "safesearch": "moderate",
-            "limit": 1
-        })
-    url = res.json()["results"][0]["media"][0]["gif"]["url"]
+    if not cid in gif_cache:
+        gif_cache[cid] = set()
+    while True:
+        res = requests.get(
+            "https://api.tenor.com/v1/random",
+            params={
+                "key": tenorkey,
+                "anon_id": anonid,
+                "q": keyword,
+                "safesearch": "moderate",
+                "limit": 1
+            })
+        url = res.json()["results"][0]["media"][0]["gif"]["url"]
+        if not url in gif_cache[cid]:
+            gif_cache[cid].add(url)
+
+            def remove_cache(bot, job):
+                gif_cache[cid].remove(url)
+
+            queue.run_once(remove_cache, 3600)
+            break
     bot.sendChatAction(chat_id=cid, action=telegram.ChatAction.UPLOAD_PHOTO)
     bot.sendDocument(chat_id=cid, document=url, timeout=60)
 
