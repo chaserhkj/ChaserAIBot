@@ -37,4 +37,9 @@ actions:
         reply_text: "晚安，亲爱的"
         mention_text: "向你道了晚安"
         anime: True
+    tired:
+        keyword: "tired"
+        reply_text: "很累吧"
+        mention_text: "向你表示他很累"
+        anime: True
 
