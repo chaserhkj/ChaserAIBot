@@ -18,6 +18,7 @@ import yaml, os
 with open(config_path, "r") as f:
     config = yaml.load(f)
 tg_key = config["apikey"]
+import telegram
 from telegram.ext import Updater, CommandHandler
 from io import BytesIO
 from telegram import InputFile
@@ -141,7 +142,10 @@ def pin(bot, update, args):
 @logged
 def kiss(bot, update):
     msg = update.message.reply_to_message
+    cid = update.message.chat.id
     if msg == None:
+        bot.sendChatAction(chat_id = cid, action = telegram.ChatAction.UPLOAD_PHOTO)
+        bot.sendDocument(chat_id = cid, document = "https://media2.giphy.com/media/KH1CTZtw1iP3W/giphy.gif")
         update.message.reply_text("亲亲你！")
         return
     user = update.message.from_user
