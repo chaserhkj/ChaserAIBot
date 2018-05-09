@@ -194,6 +194,11 @@ def sendGIF(bot, cid, keyword, anime=True):
                     "limit": 50
                 })
             result_cache[cid][keyword] = iter(res.json()["results"])
+
+            def result_ttl(bot, job):
+                del result_cache[cid][keyword]
+
+            queue.run_once(result_ttl, 600)
         for result in result_cache[cid][keyword]:
             url = result["media"][0]["gif"]["url"]
             if not url in gif_cache[cid]:
