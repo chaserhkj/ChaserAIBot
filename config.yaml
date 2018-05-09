@@ -22,4 +22,19 @@ actions:
         reply_text: "摸摸头"
         mention_text: "摸了摸你的头，表示同情"
         anime: True
+    punch:
+        keyword: "punch"
+        reply_text: "信不信我揍你"
+        mention_text: "狠狠的揍了你一拳"
+        anime: True
+    slap:
+        keyword: "slap"
+        reply_text: "信不信老娘扇你一巴掌"
+        mention_text: "狠狠的扇了你一巴掌"
+        anime: True
+    sleep:
+        keyword: "sleep"
+        reply_text: "晚安，亲爱的"
+        mention_text: "向你道了晚安"
+        anime: True
 
