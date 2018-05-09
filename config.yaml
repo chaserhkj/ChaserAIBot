@@ -16,4 +16,9 @@ actions:
         reply_text: "抱抱你！"
         mention_text: "抱了你一下！"
         anime: True
+    pat:
+        keyword: "pat"
+        reply_text: "摸摸头"
+        mention_text: "摸了摸你的头，表示同情"
+        anime: True
 
