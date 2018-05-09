@@ -217,6 +217,32 @@ def unpin(bot, update):
         del unpin_events[gid]
 
 
+@logged
+def list_cmd(bot, update):
+    help_txt = \
+"""List of non-action commands:
+/start     : Grant permission for individual user
+/getgid    : Show GID of current group chat
+/settitle  : Set group chat title
+/resettitle: Reset group chat title to default
+/setpic    : Set group chat picture
+/pin       : Pin message
+/unpin     : Unpin pinned message
+/actions   : Show action commands
+/help      : Show non-action commands"""
+    update.message.reply_text(help_txt)
+
+
+@logged
+def list_act(bot, update):
+    if "actions" in config:
+        act_txt = "\n".join("/{}".format(i) for i in config["actions"])
+        act_txt = "List of action commands:\n" + act_txt
+    else:
+        act_txt = "No action command defined"
+    update.message.reply_text(act_txt)
+
+
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
 updater.dispatcher.add_handler(
@@ -225,6 +251,8 @@ updater.dispatcher.add_handler(CommandHandler("resettitle", resettitle))
 updater.dispatcher.add_handler(CommandHandler("setpic", setpic))
 updater.dispatcher.add_handler(CommandHandler("pin", pin, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("unpin", unpin))
+updater.dispatcher.add_handler(CommandHandler("help", list_cmd))
+updater.dispatcher.add_handler(CommandHandler("actions", list_act))
 
 if "actions" in config:
     actions = config["actions"]
