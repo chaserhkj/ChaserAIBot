@@ -208,8 +208,8 @@ updater.dispatcher.add_handler(CommandHandler("setpic", setpic))
 updater.dispatcher.add_handler(CommandHandler("pin", pin, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("unpin", unpin))
 
-if "action" in config:
-    actions = config["action"]
+if "actions" in config:
+    actions = config["actions"]
     for key in actions:
         fact = action_gen(**actions[key])
         updater.dispatcher.add_handler(CommandHandler(key, fact))
