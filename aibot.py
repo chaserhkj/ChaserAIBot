@@ -289,7 +289,7 @@ def getsid(bot, update):
 @logged
 def getuid(bot, update):
     user = update.message.from_user
-    update.message.replt_text("Your User ID:{}".format(user.id))
+    update.message.reply_text("Your User ID:{}".format(user.id))
 
 
 def respond(bot, update, response):
