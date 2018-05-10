@@ -293,6 +293,7 @@ def list_cmd(bot, update):
 /settres   : Set up text response
 /deltres   : Delete text response
 /lstres    : List text response
+/shows     : Show sticker by id
 /help      : Show non-action commands"""
     update.message.reply_text(help_txt)
 
@@ -453,6 +454,14 @@ def lstres(bot, update):
     update.message.reply_text(pformat(db["text_response"]))
 
 
+@logged
+def shows(bot, update, args):
+    if len(args) < 1:
+        update.message.reply_text("Usage: /shows <sticker_id>")
+        return
+    update.message.reply_sticker(args[0])
+
+
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
 updater.dispatcher.add_handler(
@@ -475,6 +484,7 @@ updater.dispatcher.add_handler(
 updater.dispatcher.add_handler(
     CommandHandler("deltres", deltres, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("lstres", lstres))
+updater.dispatcher.add_handler(CommandHandler("shows", shows, pass_args=True))
 
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
