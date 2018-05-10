@@ -248,6 +248,7 @@ def list_cmd(bot, update):
 """List of non-action commands:
 /start     : Grant permission for individual user
 /getgid    : Show GID of current group chat
+/getsid    : Show id of sticker
 /settitle  : Set group chat title
 /resettitle: Reset group chat title to default
 /setpic    : Set group chat picture
@@ -268,6 +269,15 @@ def list_act(bot, update):
     update.message.reply_text(act_txt)
 
 
+@logged
+def getsid(bot, update):
+    msg = update.message.reply_to_message
+    if msg == None or msg.sticker == None:
+        update.message.reply_text("Usage:\nReply to sticker")
+        return
+    update.message.reply_text("Sticker ID:{}".format(msg.sticker.file_id))
+
+
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
 updater.dispatcher.add_handler(
@@ -278,6 +288,7 @@ updater.dispatcher.add_handler(CommandHandler("pin", pin, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("unpin", unpin))
 updater.dispatcher.add_handler(CommandHandler("help", list_cmd))
 updater.dispatcher.add_handler(CommandHandler("actions", list_act))
+updater.dispatcher.add_handler(CommandHandler("getsid", getsid))
 
 if "actions" in config:
     actions = config["actions"]
