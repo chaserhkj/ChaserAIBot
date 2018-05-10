@@ -393,7 +393,6 @@ def delsres(bot, update, args):
     update.message.reply_text("Entry deleted")
 
 
-@check_owner
 @logged
 def lssres(bot, update):
     update.message.reply_text(pformat(db["sticker_response"]))
@@ -449,7 +448,6 @@ def deltres(bot, update, args):
     update.message.reply_text("Entry deleted")
 
 
-@check_owner
 @logged
 def lstres(bot, update):
     update.message.reply_text(pformat(db["text_response"]))
