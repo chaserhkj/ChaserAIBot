@@ -343,7 +343,7 @@ def respond(bot, update, response):
         if random.uniform(0, 1) > chance:
             return
     if rtype == "text":
-        update.message.reply_text(content, parser_mode="Markdown")
+        update.message.reply_text(content, parse_mode="Markdown")
     elif rtype == "sticker":
         update.message.reply_sticker(content)
     elif rtype == "gif":
