@@ -248,11 +248,12 @@ def action_gen(keyword, reply_text, mention_text, anime=True):
     def action(bot, update):
         msg = update.message.reply_to_message
         cid = update.message.chat.id
-        sendGIF(bot, cid, keyword, anime)
         if msg == None:
+            sendGIF(bot, cid, keyword, anime, update.message)
             update.message.reply_text(reply_text)
             return
         user = update.message.from_user
+        sendGIF(bot, cid, keyword, anime, msg)
         msg.reply_text(
             "[{} {}](tg://user?id={}) {}".format(
                 "" if user.first_name == None else user.first_name, ""
