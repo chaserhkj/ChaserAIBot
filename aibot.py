@@ -48,6 +48,7 @@ if not "sticker_response" in db:
     db["sticker_response"] = {}
 if not "text_response" in db:
     db["text_response"] = {}
+import random
 
 group_config = config["groups"]
 reset_events = {}
@@ -56,6 +57,7 @@ result_cache = {}
 gif_cache = {}
 regex_handlers = {}
 owner = config["owner"]
+response_cd = set()
 
 
 def check_owner(func):
@@ -319,13 +321,29 @@ def getuid(bot, update):
 
 
 def respond(bot, update, response):
-    if response[0].lower() == "text":
-        update.message.reply_text(response[1])
-    elif response[0].lower() == "sticker":
-        update.message.reply_sticker(response[1])
-    elif response[0].lower() == "gif":
-        sendGIF(bot, update.message.chat.id, response[1], False,
-                update.message)
+    chance = response[0]
+    cd = response[1]
+    rtype = response[2].lower()
+    content = response[3]
+    sig = (rtype, content)
+    if sig in response_cd:
+        return
+    if cd > 0:
+        response_cd.add(sig)
+
+        def reset_cd(bot, job):
+            response_cd.remove(sig)
+
+        queue.run_once(reset_cd, cd)
+    if 0 < chance and chance < 1:
+        if random.uniform(0, 1) > chance:
+            return
+    if rtype == "text":
+        update.message.reply_text(content)
+    elif rtype == "sticker":
+        update.message.reply_sticker(content)
+    elif rtype == "gif":
+        sendGIF(bot, update.message.chat.id, content, False, update.message)
 
 
 @logged
@@ -339,15 +357,18 @@ def sticker_response(bot, update):
 @check_owner
 @logged
 def setsres(bot, update, args):
-    if len(args) < 3:
+    if len(args) < 5:
         update.message.reply_text(
-            "Usage: /setsres <sticker_id> <response_type> <response_content>")
+            "Usage: /setsres <sticker_id> <chance> <cooldown> <response_type> <response_content>"
+        )
         return
     sid = args[0]
-    rtype = args[1]
-    content = " ".join(args[2:])
+    chance = float(args[1])
+    cd = int(args[2])
+    rtype = args[3]
+    content = " ".join(args[4:])
     sr = db["sticker_response"]
-    sr[sid] = (rtype, content)
+    sr[sid] = (chance, cd, rtype, content)
     db["sticker_response"] = sr
     db.sync()
     update.message.reply_text("Entry updated")
@@ -384,18 +405,21 @@ def generate_reghandler(response):
 @check_owner
 @logged
 def settres(bot, update, args):
-    if len(args) < 3:
+    if len(args) < 5:
         update.message.reply_text(
-            "Usage: /settres <regex> <response_type> <response_content>")
+            "Usage: /settres <regex> <chance> <cooldown> <response_type> <response_content> "
+        )
         return
     regex = args[0]
-    rtype = args[1]
-    content = " ".join(args[2:])
+    chance = float(args[1])
+    cd = int(args[2])
+    rtype = args[3]
+    content = " ".join(args[4:])
     tr = db["text_response"]
-    tr[regex] = (rtype, content)
+    tr[regex] = (chance, cd, rtype, content)
     db["text_response"] = tr
     db.sync()
-    h = RegexHandler(regex, generate_reghandler((rtype, content)))
+    h = RegexHandler(regex, generate_reghandler(tr[regex]))
     if regex in regex_handlers:
         updater.dispatcher.remove_handler(regex_handlers[regex])
     regex_handlers[regex] = h
