@@ -460,8 +460,9 @@ if "actions" in config:
         updater.dispatcher.add_handler(CommandHandler(key, fact))
 for regex in db["text_response"]:
     response = db["text_response"][regex]
-    updater.dispatcher.add_handler(
-        RegexHandler(regex, generate_reghandler(response)))
+    h = RegexHandler(regex, generate_reghandler(response))
+    updater.dispatcher.add_handler(h)
+    regex_handlers[regex] = h
 
 updater.start_webhook(listen='127.0.0.1', port=9990, url_path=tg_key)
 updater.bot.set_webhook(url='https://tgbot.chaserhkj.me/ai/' + tg_key)
