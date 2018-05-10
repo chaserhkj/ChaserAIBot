@@ -195,7 +195,7 @@ def pin(bot, update, args):
     unpin_events[gid] = event
 
 
-def sendGIF(bot, cid, keyword, anime=True):
+def sendGIF(bot, cid, keyword, anime=True, reply_msg=None):
     if anime:
         keyword = "anime {}".format(keyword)
     if not cid in gif_cache:
@@ -230,7 +230,14 @@ def sendGIF(bot, cid, keyword, anime=True):
                 queue.run_once(remove_cache, 1800)
                 bot.sendChatAction(
                     chat_id=cid, action=telegram.ChatAction.UPLOAD_PHOTO)
-                bot.sendDocument(chat_id=cid, document=url, timeout=60)
+                if reply_msg == None:
+                    bot.sendDocument(chat_id=cid, document=url, timeout=60)
+                else:
+                    bot.sendDocument(
+                        chat_id=cid,
+                        document=url,
+                        timeout=60,
+                        reply_to_message_id=reply_msg.message_id)
                 return
         del result_cache[cid][keyword]
 
@@ -314,7 +321,8 @@ def respond(bot, update, response):
     elif response[0].lower() == "sticker":
         update.message.reply_sticker(response[1])
     elif response[0].lower() == "gif":
-        sendGIF(bot, update.message.chat.id, response[1], False)
+        sendGIF(bot, update.message.chat.id, response[1], False,
+                update.message)
 
 
 @logged
@@ -355,6 +363,7 @@ def delsres(bot, update, args):
         db["sticker_response"] = sr
         db.sync()
     update.message.reply_text("Entry deleted")
+
 
 @check_owner
 @logged
