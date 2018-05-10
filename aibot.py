@@ -36,6 +36,7 @@ from io import BytesIO
 from telegram import InputFile
 import pytimeparse
 import requests
+from pprint import pformat
 tenorkey = config["tenorkey"]
 res = requests.get("https://api.tenor.com/v1/anonid", params={"key": tenorkey})
 anonid = res.json()["anon_id"]
@@ -335,6 +336,7 @@ def setsres(bot, update, args):
     content = " ".join(args[2:])
     db["sticker_response"][sid] = (rtype, content)
     db.sync()
+    update.message.reply_text("Entry updated")
 
 
 @check_owner
@@ -347,6 +349,12 @@ def delsres(bot, update, args):
     if sid in db["sticker_response"]:
         del db["sticker_response"][sid]
         db.sync()
+    update.message.reply_text("Entry deleted")
+
+@check_owner
+@logged
+def lssres(bot, update):
+    update.message.reply_text(pformat(db["sticker_response"]))
 
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
@@ -365,6 +373,7 @@ updater.dispatcher.add_handler(
     CommandHandler("setsres", setsres, pass_args=True))
 updater.dispatcher.add_handler(
     CommandHandler("delsres", delsres, pass_args=True))
+updater.dispatcher.add_handler(CommandHandler("lssres", lssres))
 
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
@@ -378,3 +387,4 @@ if "actions" in config:
 updater.start_webhook(listen='127.0.0.1', port=9990, url_path=tg_key)
 updater.bot.set_webhook(url='https://tgbot.chaserhkj.me/ai/' + tg_key)
 updater.idle()
+db.close()
