@@ -63,4 +63,9 @@ actions:
         reply_text: "笑得这么开心？o(☆Ф∇Ф☆)o"
         mention_text: "向你发出了欢快的笑声"
         anime: True
+    facepalm:
+        keyword: "facepalm"
+        reply_text: "(=_=)|||"
+        mention_text: "向你表示…………无话可说"
+        anime: True
 
