@@ -54,6 +54,18 @@ unpin_events = {}
 result_cache = {}
 gif_cache = {}
 regex_handlers = {}
+owner = config["owner"]
+
+
+def check_owner(func):
+    def new_func(*arg, **argd):
+        update = argd.get("update", arg[1])
+        if update.message.from_user.id != owner:
+            update.message.reply_text("This command is owner-only!")
+        else:
+            func(*arg, **argd)
+
+    return new_func
 
 
 def check_group(func):
@@ -263,6 +275,8 @@ def list_cmd(bot, update):
 /pin       : Pin message
 /unpin     : Unpin pinned message
 /actions   : Show action commands
+/setsres   : Set up sticker response
+/delsres   : Delete sticker response
 /help      : Show non-action commands"""
     update.message.reply_text(help_txt)
 
@@ -309,6 +323,30 @@ def sticker_response(bot, update):
     respond(bot, update, db["sticker_response"][sid])
 
 
+@check_owner
+@logged
+def setsres(bot, update, args):
+    if len(args) < 3:
+        update.message.reply_text(
+            "Usage: /setsres <sticker_id> <response_type> <response_content>")
+    sid = args[0]
+    rtype = args[1]
+    content = " ".join(args[2:])
+    db["sticker_response"][sid] = (rtype, content)
+    db.sync()
+
+
+@check_owner
+@logged
+def delsres(bot, update, args):
+    if len(args) < 1:
+        update.message.reply_text("Usage: /delsres <sticker_id>")
+    sid = args[0]
+    if sid in db["sticker_response"]:
+        del db["sticker_response"][sid]
+        db.sync()
+
+
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
 updater.dispatcher.add_handler(
@@ -321,6 +359,10 @@ updater.dispatcher.add_handler(CommandHandler("help", list_cmd))
 updater.dispatcher.add_handler(CommandHandler("actions", list_act))
 updater.dispatcher.add_handler(CommandHandler("getsid", getsid))
 updater.dispatcher.add_handler(CommandHandler("getuid", getuid))
+updater.dispatcher.add_handler(
+    CommandHandler("setsres", setsres, pass_args=True))
+updater.dispatcher.add_handler(
+    CommandHandler("delsres", delsres, pass_args=True))
 
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
