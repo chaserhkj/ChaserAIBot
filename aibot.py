@@ -320,6 +320,7 @@ updater.dispatcher.add_handler(CommandHandler("unpin", unpin))
 updater.dispatcher.add_handler(CommandHandler("help", list_cmd))
 updater.dispatcher.add_handler(CommandHandler("actions", list_act))
 updater.dispatcher.add_handler(CommandHandler("getsid", getsid))
+updater.dispatcher.add_handler(CommandHandler("getuid", getuid))
 
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
