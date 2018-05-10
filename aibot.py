@@ -286,6 +286,9 @@ def list_cmd(bot, update):
 /setsres   : Set up sticker response
 /delsres   : Delete sticker response
 /lssres    : List sticker response
+/settres   : Set up text response
+/deltres   : Delete text response
+/lstres    : List text response
 /help      : Show non-action commands"""
     update.message.reply_text(help_txt)
 
@@ -371,6 +374,59 @@ def lssres(bot, update):
     update.message.reply_text(pformat(db["sticker_response"]))
 
 
+def generate_reghandler(response):
+    def handler(bot, update):
+        respond(bot, update, response)
+
+    return handler
+
+
+@check_owner
+@logged
+def settres(bot, update, args):
+    if len(args) < 3:
+        update.message.reply_text(
+            "Usage: /settres <regex> <response_type> <response_content>")
+        return
+    regex = args[0]
+    rtype = args[1]
+    content = " ".join(args[2:])
+    tr = db["text_response"]
+    tr[regex] = (rtype, content)
+    db["text_response"] = tr
+    db.sync()
+    h = RegexHandler(regex, generate_reghandler((rtype, content)))
+    if regex in regex_handlers:
+        updater.dispatcher.remove_handler(regex_handlers[regex])
+    regex_handlers[regex] = h
+    updater.dispatcher.add_handler(h)
+    update.message.reply_text("Entry updated")
+
+
+@check_owner
+@logged
+def deltres(bot, update, args):
+    if len(args) < 1:
+        update.message.reply_text("Usage: /deltres <regex>")
+        return
+    regex = args[0]
+    if regex in db["text_response"]:
+        tr = db["text_response"]
+        del tr[regex]
+        db["text_response"] = tr
+        db.sync()
+    if regex in regex_handlers:
+        updater.dispatcher.remove_handler(regex_handlers[regex])
+        del regex_handlers[regex]
+    update.message.reply_text("Entry deleted")
+
+
+@check_owner
+@logged
+def lstres(bot, update):
+    update.message.reply_text(pformat(db["text_response"]))
+
+
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
 updater.dispatcher.add_handler(
@@ -388,6 +444,11 @@ updater.dispatcher.add_handler(
 updater.dispatcher.add_handler(
     CommandHandler("delsres", delsres, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("lssres", lssres))
+updater.dispatcher.add_handler(
+    CommandHandler("settres", settres, pass_args=True))
+updater.dispatcher.add_handler(
+    CommandHandler("deltres", deltres, pass_args=True))
+updater.dispatcher.add_handler(CommandHandler("lstres", lstres))
 
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
@@ -397,6 +458,10 @@ if "actions" in config:
     for key in actions:
         fact = action_gen(**actions[key])
         updater.dispatcher.add_handler(CommandHandler(key, fact))
+for regex in db["text_response"]:
+    response = db["text_response"][regex]
+    updater.dispatcher.add_handler(
+        RegexHandler(regex, generate_reghandler(response)))
 
 updater.start_webhook(listen='127.0.0.1', port=9990, url_path=tg_key)
 updater.bot.set_webhook(url='https://tgbot.chaserhkj.me/ai/' + tg_key)
