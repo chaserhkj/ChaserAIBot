@@ -31,7 +31,7 @@ with open(config_path, "r") as f:
     config = yaml.load(f)
 tg_key = config["apikey"]
 import telegram
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, RegexHandler
 from io import BytesIO
 from telegram import InputFile
 import pytimeparse
@@ -41,12 +41,19 @@ res = requests.get("https://api.tenor.com/v1/anonid", params={"key": tenorkey})
 anonid = res.json()["anon_id"]
 updater = Updater(tg_key, workers=16)
 queue = updater.job_queue
+import shelve
+db = shelve.open("data.db")
+if not "sticker_response" in db:
+    db["sticker_response"] = {}
+if not "text_response" in db:
+    db["text_response"] = {}
 
 group_config = config["groups"]
 reset_events = {}
 unpin_events = {}
 result_cache = {}
 gif_cache = {}
+regex_handlers = {}
 
 
 def check_group(func):
@@ -77,7 +84,7 @@ def start(bot, update):
 @check_group
 def getgid(bot, update):
     chat = update.message.chat
-    update.message.reply_text("Group ID is: {}\n".format(chat.id, chat.GROUP))
+    update.message.reply_text("Group ID is: {}\n".format(chat.id))
 
 
 @check_group
@@ -249,6 +256,7 @@ def list_cmd(bot, update):
 /start     : Grant permission for individual user
 /getgid    : Show GID of current group chat
 /getsid    : Show id of sticker
+/getuid    : Show your user ID
 /settitle  : Set group chat title
 /resettitle: Reset group chat title to default
 /setpic    : Set group chat picture
@@ -278,6 +286,29 @@ def getsid(bot, update):
     update.message.reply_text("Sticker ID:{}".format(msg.sticker.file_id))
 
 
+@logged
+def getuid(bot, update):
+    user = update.message.from_user
+    update.message.replt_text("Your User ID:{}".format(user.id))
+
+
+def respond(bot, update, response):
+    if response[0].lower() == "text":
+        update.message.reply_text(response[1])
+    elif response[0].lower() == "sticker":
+        update.message.reply_sticker(response[1])
+    elif response[0].lower() == "gif":
+        sendGIF(bot, update.message.chat.id, response[1], False)
+
+
+@logged
+def sticker_response(bot, update):
+    sid = update.message.sticker.file_id
+    if not sid in db["sticker_response"]:
+        return
+    respond(bot, update, db["sticker_response"][sid])
+
+
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
 updater.dispatcher.add_handler(
@@ -289,6 +320,9 @@ updater.dispatcher.add_handler(CommandHandler("unpin", unpin))
 updater.dispatcher.add_handler(CommandHandler("help", list_cmd))
 updater.dispatcher.add_handler(CommandHandler("actions", list_act))
 updater.dispatcher.add_handler(CommandHandler("getsid", getsid))
+
+updater.dispatcher.add_handler(
+    MessageHandler(Filters.sticker, sticker_response))
 
 if "actions" in config:
     actions = config["actions"]
