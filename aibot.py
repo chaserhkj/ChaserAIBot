@@ -255,7 +255,9 @@ def action_gen(keyword, reply_text, mention_text, anime=True):
         user = update.message.from_user
         msg.reply_text(
             "[{} {}](tg://user?id={}) {}".format(
-                user.first_name, user.last_name, user.id, mention_text),
+                "" if user.first_name == None else user.first_name, ""
+                if user.last_name == None else user.last_name, user.id,
+                mention_text),
             parse_mode="Markdown")
 
     return logged(action)
