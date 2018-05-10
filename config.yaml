@@ -53,4 +53,14 @@ actions:
         reply_text: "生气了？(* ￣︿￣)"
         mention_text: "向你表示很生气"
         anime: True
+    smile:
+        keyword: "smile"
+        reply_text: "露出温柔的微笑(*‘ v`*)"
+        mention_text: "向你露出了微笑"
+        anime: True
+    laugh:
+        keyword: "laugh"
+        reply_text: "笑得这么开心？o(☆Ф∇Ф☆)o"
+        mention_text: "向你发出了欢快的笑声"
+        anime: True
 
