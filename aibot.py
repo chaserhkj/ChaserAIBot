@@ -329,6 +329,7 @@ def setsres(bot, update, args):
     if len(args) < 3:
         update.message.reply_text(
             "Usage: /setsres <sticker_id> <response_type> <response_content>")
+        return
     sid = args[0]
     rtype = args[1]
     content = " ".join(args[2:])
@@ -341,6 +342,7 @@ def setsres(bot, update, args):
 def delsres(bot, update, args):
     if len(args) < 1:
         update.message.reply_text("Usage: /delsres <sticker_id>")
+        return
     sid = args[0]
     if sid in db["sticker_response"]:
         del db["sticker_response"][sid]
