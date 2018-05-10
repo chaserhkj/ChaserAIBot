@@ -67,5 +67,5 @@ actions:
         keyword: "facepalm"
         reply_text: "(=_=)|||"
         mention_text: "向你表示…………无话可说"
-        anime: True
+        anime: False
 
