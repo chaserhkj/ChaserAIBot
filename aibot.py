@@ -335,7 +335,9 @@ def setsres(bot, update, args):
     sid = args[0]
     rtype = args[1]
     content = " ".join(args[2:])
-    db["sticker_response"][sid] = (rtype, content)
+    sr = db["sticker_response"]
+    sr[sid] = (rtype, content)
+    db["sticker_response"] = sr
     db.sync()
     update.message.reply_text("Entry updated")
 
@@ -348,7 +350,9 @@ def delsres(bot, update, args):
         return
     sid = args[0]
     if sid in db["sticker_response"]:
-        del db["sticker_response"][sid]
+        sr = db["sticker_response"]
+        del sr[sid]
+        db["sticker_response"] = sr
         db.sync()
     update.message.reply_text("Entry deleted")
 
