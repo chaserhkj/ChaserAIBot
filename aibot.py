@@ -278,6 +278,7 @@ def list_cmd(bot, update):
 /actions   : Show action commands
 /setsres   : Set up sticker response
 /delsres   : Delete sticker response
+/lssres    : List sticker response
 /help      : Show non-action commands"""
     update.message.reply_text(help_txt)
 
