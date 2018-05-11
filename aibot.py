@@ -92,7 +92,7 @@ def check_config(gid, key):
 
 @logged
 def start(bot, update):
-    update.message.reply_text("Hi, how are you doing today?\n")
+    update.message.reply_text("嗨多磨～")
 
 
 @logged
