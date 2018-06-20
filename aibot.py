@@ -257,7 +257,7 @@ def action_gen(keyword, reply_text, mention_text, self_text, anime=True):
         user = update.message.from_user
         sendGIF(bot, cid, keyword, anime, msg)
         if target_id == self_id:
-            msg.reply_text(self_text)
+            update.message.reply_text(self_text)
             return
         msg.reply_text(
             "[{} {}](tg://user?id={}) {}".format(
