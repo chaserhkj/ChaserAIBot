@@ -244,7 +244,7 @@ def sendGIF(bot, cid, keyword, anime=True, reply_msg=None):
         del result_cache[cid][keyword]
 
 
-def action_gen(keyword, reply_text, mention_text, anime=True):
+def action_gen(keyword, reply_text, mention_text, self_text, anime=True):
     def action(bot, update):
         msg = update.message.reply_to_message
         cid = update.message.chat.id
@@ -252,8 +252,13 @@ def action_gen(keyword, reply_text, mention_text, anime=True):
             sendGIF(bot, cid, keyword, anime, update.message)
             update.message.reply_text(reply_text)
             return
+        target_id = msg.from_user.id
+        self_id = bot.get_me().id
         user = update.message.from_user
         sendGIF(bot, cid, keyword, anime, msg)
+        if target_id == self_id:
+            msg.reply_text(self_text)
+            return
         msg.reply_text(
             "[{} {}](tg://user?id={}) {}".format(
                 "" if user.first_name == None else user.first_name, ""

@@ -12,60 +12,72 @@ actions:
         keyword: "kiss"
         reply_text: "亲亲你！(*￣з￣)"
         mention_text: "亲了你一下！"
+        self_text: "哇，被亲了(*￣з￣)"
         anime: True
     hug:
         keyword: "hug"
         reply_text: "抱抱你！(つ´∀｀)つ"
         mention_text: "抱了你一下！"
+        self_text: "拥抱好温暖(つ´∀｀)つ"
         anime: True
     pat:
         keyword: "pat"
         reply_text: "摸摸头(っ´ω`)ﾉ(╥ω╥)"
         mention_text: "摸了摸你的头，表示同情"
+        self_text: "喵呜～"
         anime: True
     punch:
         keyword: "punch"
         reply_text: "信不信老娘揍你(o￣∇￣)=◯)`ν゜)"
         mention_text: "狠狠的揍了你一拳"
+        self_text: "痛…………(♯▼皿▼)"
         anime: True
     slap:
         keyword: "slap"
         reply_text: "信不信老娘扇你一巴掌(♯▼皿▼)"
         mention_text: "狠狠的扇了你一巴掌"
+        self_text: "为什么打我脸(╥ω╥)"
         anime: True
     sleep:
         keyword: "sleep"
         reply_text: "晚安，亲爱的(´ω｀*)"
         mention_text: "向你道了晚安"
+        self_text: "嗯，你也晚安(´ω｀*)"
         anime: True
     tired:
         keyword: "tired"
         reply_text: "很累吧( ´ ▽ ` )ﾉ"
         mention_text: "向你表示他很累"
+        self_text: "很累吧( ´ ▽ ` )ﾉ"
         anime: True
     peek:
         keyword: "peek"
         reply_text: "盯———— (◉ω◉)"
         mention_text: "悄悄的盯着你"
+        self_text: "你瞅啥呢(* ￣︿￣)"
         anime: True
     mad:
         keyword: "mad"
         reply_text: "生气了？(* ￣︿￣)"
         mention_text: "向你表示很生气"
+        self_text: "消消气消消气(っ´ω`)ﾉ"
         anime: True
     smile:
         keyword: "smile"
         reply_text: "露出温柔的微笑(*‘ v`*)"
         mention_text: "向你露出了微笑"
+        self_text: "嘿嘿嘿(*‘ v`*)"
         anime: True
     laugh:
         keyword: "laugh"
         reply_text: "笑得这么开心？o(☆Ф∇Ф☆)o"
         mention_text: "向你发出了欢快的笑声"
+        self_text: "红红火火恍恍惚惚"
         anime: True
     facepalm:
         keyword: "facepalm"
         reply_text: "(=_=)|||"
         mention_text: "向你表示…………无话可说"
+        self_text: "呃………………（扶额"
         anime: False
 
