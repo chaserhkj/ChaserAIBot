@@ -668,6 +668,8 @@ updater.dispatcher.add_handler(
     CommandHandler("settres", settres, pass_args=True))
 updater.dispatcher.add_handler(
     CommandHandler("deltres", deltres, pass_args=True))
+updater.dispatcher.add_handler(CommandHandler("ban", ban))
+updater.dispatcher.add_handler(CommandHandler("banpic", banpic))
 updater.dispatcher.add_handler(CommandHandler("unban", unban))
 updater.dispatcher.add_handler(CommandHandler("lstres", lstres))
 updater.dispatcher.add_handler(CommandHandler("shows", shows, pass_args=True))
