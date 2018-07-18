@@ -80,7 +80,8 @@ def check_restrict(func):
         member = bot.get_chat_member(update.message.chat.id, uid)
         if not (member.status == 'creator' or member.can_restrict_members):
             update.message.reply_text("你没有管理小黑屋的权限哦")
-            update.message.chat.send_sticker("CAADBQADJwIAAgsiPA7OflnL6kErDgI")
+            update.message.chat.send_sticker(
+                sticker="CAADBQADJwIAAgsiPA7OflnL6kErDgI")
         else:
             func(*arg, **argd)
 
@@ -306,7 +307,8 @@ def unban(bot, update):
     member = update.message.chat.get_member(msg.from_user.id)
     if member.status != 'restricted':
         update.message.reply_text("呃呃，他就不在小黑屋里面啊")
-        update.message.chat.send_sticker("CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
+        update.message.chat.send_sticker(
+            sticker="CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
         return
     user = member.user
     bot.restrict_chat_member(
@@ -321,7 +323,7 @@ def unban(bot, update):
             "" if user.first_name == None else user.first_name, "" if
             user.last_name == None else user.last_name, user.id, "从小黑屋里放出来了！"),
         parse_mode="Markdown")
-    update.message.chat.send_sticker("CAADBQADbAEAAgsiPA5ZwMJd8rkuxgI")
+    update.message.chat.send_sticker(sticker="CAADBQADbAEAAgsiPA5ZwMJd8rkuxgI")
 
 
 @logged
