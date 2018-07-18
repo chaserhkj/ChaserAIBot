@@ -349,8 +349,8 @@ def ban(bot, update, args):
             can_send_other_messages=True,
             can_add_web_page_previews=True,
             timeout=10)
-        update.message.chat.send_text(
-            "[{} {}](tg://user?id={}) {}".format(
+        update.message.chat.send_message(
+            text="[{} {}](tg://user?id={}) {}".format(
                 "" if user.first_name == None else user.first_name, "" if
                 user.last_name == None else user.last_name, user.id, "刑满释放了！"),
             parse_mode="Markdown")
