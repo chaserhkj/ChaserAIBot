@@ -337,7 +337,7 @@ def ban(bot, update, args):
     if not gid in unban_events:
         unban_events[gid] = {}
     if uid in unban_events[gid]:
-        unban_events[gid].schedule_removal()
+        unban_events[gid][uid].schedule_removal()
 
     def timed_unban(bot, job):
         bot.restrict_chat_member(
@@ -399,7 +399,7 @@ def banpic(bot, update, args):
     if not gid in unban_events:
         unban_events[gid] = {}
     if uid in unban_events[gid]:
-        unban_events[gid].schedule_removal()
+        unban_events[gid][uid].schedule_removal()
 
     def timed_unban(bot, job):
         bot.restrict_chat_member(
@@ -438,9 +438,11 @@ def unban(bot, update):
             sticker="CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
         return
     user = member.user
+    gid = update.message.chat.id
+    uid = user.id
     bot.restrict_chat_member(
-        update.message.chat.id,
-        user.id,
+        gid,
+        uid,
         can_send_messages=True,
         can_send_media_messages=True,
         can_send_other_messages=True,
@@ -454,7 +456,8 @@ def unban(bot, update):
     if not gid in unban_events:
         unban_events[gid] = {}
     if uid in unban_events[gid]:
-        unban_events[gid].schedule_removal()
+        unban_events[gid][uid].schedule_removal()
+        del unban_events[gid][uid]
 
 
 @logged
