@@ -310,7 +310,7 @@ def ban(bot, update, args):
         return
     member = update.message.chat.get_member(msg.from_user.id)
     if member.status == 'creator' or member.status == 'administrator':
-        update.message.reply_text("呃呃，我没有小黑屋管理员的权限啊！")
+        update.message.reply_text("呃呃，我没有处理管理员的权限啊！")
         update.message.chat.send_sticker(
             sticker="CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
         return
