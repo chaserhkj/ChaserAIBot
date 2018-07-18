@@ -64,7 +64,23 @@ def check_owner(func):
     def new_func(*arg, **argd):
         update = argd.get("update", arg[1])
         if update.message.from_user.id != owner:
-            update.message.reply_text("This command is owner-only!")
+            update.message.reply_text("呃……这个我只能听我家主人说了算")
+            update.message.reply_sticker("CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
+        else:
+            func(*arg, **argd)
+
+    return new_func
+
+
+def check_restrict(func):
+    def new_func(*arg, **argd):
+        update = argd.get("update", arg[1])
+        bot = argd.get("bot", arg[0])
+        uid = update.message.from_user.id
+        member = bot.get_chat_member(update.message.chat.id, uid)
+        if not member.can_restrict_members:
+            update.message.reply_text("你没有管理小黑屋的权限哦")
+            update.message.reply_sticker("CAADBQADJwIAAgsiPA7OflnL6kErDgI")
         else:
             func(*arg, **argd)
 
@@ -128,9 +144,8 @@ def settitle(bot, update, args):
 
         event = queue.run_once(reset, delay)
         reset_events[gid] = event
-        update.message.reply_text(
-            "Delayed reset is enabled for this group.\n\nTitle would be reset to {} after {} seconds.\n".
-            format(reset_title, delay))
+        update.message.reply_text("呼姆，这个群设置了默认群名呢……我会在{}秒后将群名重置为{}的……".format(
+            delay, reset_title))
 
 
 @check_group
@@ -279,6 +294,36 @@ def unpin(bot, update):
         del unpin_events[gid]
 
 
+@check_group
+@check_restrict
+@logged
+def unban(bot, update):
+    msg = update.message.reply_to_message
+    if msg == None:
+        update.message.reply_text(
+            "Usage:\n\nReplying to the user you wish to unban.\n/unban\n")
+        return
+    member = update.message.chat.get_member(msg.from_user.id)
+    if member.status == 'administrator':
+        update.message.reply_text("呃呃，我没有权限管管理员呀")
+        update.message.reply_sticker("CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
+        return
+    user = member.user
+    bot.restrict_chat_member(
+        update.message.chat.id,
+        user.id,
+        can_send_messages=True,
+        can_send_media_messages=True,
+        can_send_other_messages=True,
+        can_add_web_page_previews=True)
+    update.message.reply_text(
+        "[{} {}](tg://user?id={}) {}".format(
+            "" if user.first_name == None else user.first_name, "" if
+            user.last_name == None else user.last_name, user.id, "从小黑屋里放出来了！"),
+        parse_mode="Markdown")
+    update.message.reply_sticker("CAADBQADbAEAAgsiPA5ZwMJd8rkuxgI")
+
+
 @logged
 def list_cmd(bot, update):
     help_txt = \
@@ -300,6 +345,9 @@ def list_cmd(bot, update):
 /deltres   : Delete text response
 /lstres    : List text response
 /shows     : Show sticker by id
+/ban       : Ban user to send messages for a certain period of time
+/banpic    : Ban user to send pictures for a certain period of time
+/unban     : Unban user from previous bans
 /help      : Show non-action commands"""
     update.message.reply_text(help_txt)
 
@@ -487,6 +535,7 @@ updater.dispatcher.add_handler(
     CommandHandler("settres", settres, pass_args=True))
 updater.dispatcher.add_handler(
     CommandHandler("deltres", deltres, pass_args=True))
+updater.duspatcher.add_handler(CommandHandler("unban", unban))
 updater.dispatcher.add_handler(CommandHandler("lstres", lstres))
 updater.dispatcher.add_handler(CommandHandler("shows", shows, pass_args=True))
 
