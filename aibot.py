@@ -295,6 +295,133 @@ def unpin(bot, update):
         del unpin_events[gid]
 
 
+unban_events = {}
+
+
+@check_group
+@check_restrict
+@logged
+def ban(bot, update, args):
+    msg = update.message.reply_to_message
+    if msg == None:
+        update.message.reply_text(
+            "Usage:\n\nReplying to the user you wish to ban.\n/ban [Ban Time]\n"
+        )
+        return
+    member = update.message.chat.get_member(msg.from_user.id)
+    if member.status == 'creator' or member.status == 'administrator':
+        update.message.reply_text("呃呃，我没有小黑屋管理员的权限啊！")
+        update.message.chat.send_sticker(
+            sticker="CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
+        return
+    user = member.user
+    gid = update.message.chat.id
+    uid = user.id
+    bot.restrict_chat_member(
+        gid,
+        uid,
+        can_send_messages=False,
+        can_send_media_messages=False,
+        can_send_other_messages=False,
+        can_add_web_page_previews=False)
+    update.message.reply_text(
+        "[{} {}](tg://user?id={}) {}".format(
+            "" if user.first_name == None else user.first_name, ""
+            if user.last_name == None else user.last_name, user.id,
+            "跟我乖乖到小黑屋里走一趟吧"),
+        parse_mode="Markdown")
+    update.message.chat.send_sticker(sticker="CAADBQADJwIAAgsiPA7OflnL6kErDgI")
+    if len(args) == 0:
+        return
+    delay = pytimeparse.parse(args[0])
+    if not gid in unban_events:
+        unban_events[gid] = {}
+    if uid in unban_events[gid]:
+        unban_events[gid].schedule_removal()
+
+    def timed_unban(bot, job):
+        bot.restrict_chat_member(
+            gid,
+            uid,
+            can_send_messages=True,
+            can_send_media_messages=True,
+            can_send_other_messages=True,
+            can_add_web_page_previews=True)
+        update.message.chat.send_text(
+            "[{} {}](tg://user?id={}) {}".format(
+                "" if user.first_name == None else user.first_name, "" if
+                user.last_name == None else user.last_name, user.id, "刑满释放了！"),
+            parse_mode="Markdown")
+        update.message.chat.send_sticker(
+            sticker="CAADBQADbAEAAgsiPA5ZwMJd8rkuxgI")
+        del unban_events[gid][uid]
+
+    event = queue.run_once(timed_unban, delay)
+    unban_events[gid][uid] = event
+
+
+@check_group
+@check_restrict
+@logged
+def banpic(bot, update, args):
+    msg = update.message.reply_to_message
+    if msg == None:
+        update.message.reply_text(
+            "Usage:\n\nReplying to the user you wish to ban.\n/banpic [Ban Time]\n"
+        )
+        return
+    member = update.message.chat.get_member(msg.from_user.id)
+    if member.status == 'creator' or member.status == 'administrator':
+        update.message.reply_text("呃呃，我没有小黑屋管理员的权限啊！")
+        update.message.chat.send_sticker(
+            sticker="CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
+        return
+    user = member.user
+    gid = update.message.chat.id
+    uid = user.id
+    bot.restrict_chat_member(
+        gid,
+        uid,
+        can_send_messages=True,
+        can_send_media_messages=False,
+        can_send_other_messages=False,
+        can_add_web_page_previews=False)
+    update.message.reply_text(
+        "[{} {}](tg://user?id={}) {}".format(
+            "" if user.first_name == None else user.first_name, ""
+            if user.last_name == None else user.last_name, user.id,
+            "把头伸过来，我给你加个不能发图的buff"),
+        parse_mode="Markdown")
+    update.message.chat.send_sticker(sticker="CAADBQADJwIAAgsiPA7OflnL6kErDgI")
+    if len(args) == 0:
+        return
+    delay = pytimeparse.parse(args[0])
+    if not gid in unban_events:
+        unban_events[gid] = {}
+    if uid in unban_events[gid]:
+        unban_events[gid].schedule_removal()
+
+    def timed_unban(bot, job):
+        bot.restrict_chat_member(
+            gid,
+            uid,
+            can_send_messages=True,
+            can_send_media_messages=True,
+            can_send_other_messages=True,
+            can_add_web_page_previews=True)
+        update.message.chat.send_text(
+            "[{} {}](tg://user?id={}) {}".format(
+                "" if user.first_name == None else user.first_name, "" if
+                user.last_name == None else user.last_name, user.id, "刑满释放了！"),
+            parse_mode="Markdown")
+        update.message.chat.send_sticker(
+            sticker="CAADBQADbAEAAgsiPA5ZwMJd8rkuxgI")
+        del unban_events[gid][uid]
+
+    event = queue.run_once(timed_unban, delay)
+    unban_events[gid][uid] = event
+
+
 @check_group
 @check_restrict
 @logged
@@ -324,6 +451,10 @@ def unban(bot, update):
             user.last_name == None else user.last_name, user.id, "从小黑屋里放出来了！"),
         parse_mode="Markdown")
     update.message.chat.send_sticker(sticker="CAADBQADbAEAAgsiPA5ZwMJd8rkuxgI")
+    if not gid in unban_events:
+        unban_events[gid] = {}
+    if uid in unban_events[gid]:
+        unban_events[gid].schedule_removal()
 
 
 @logged
