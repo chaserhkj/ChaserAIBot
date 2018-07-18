@@ -304,8 +304,8 @@ def unban(bot, update):
             "Usage:\n\nReplying to the user you wish to unban.\n/unban\n")
         return
     member = update.message.chat.get_member(msg.from_user.id)
-    if member.status == 'administrator':
-        update.message.reply_text("呃呃，我没有权限管管理员呀")
+    if member.status != 'restricted':
+        update.message.reply_text("呃呃，他就不在小黑屋里面啊")
         update.message.chat.send_sticker("CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
         return
     user = member.user
