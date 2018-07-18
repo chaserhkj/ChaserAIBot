@@ -323,7 +323,8 @@ def ban(bot, update, args):
         can_send_messages=False,
         can_send_media_messages=False,
         can_send_other_messages=False,
-        can_add_web_page_previews=False)
+        can_add_web_page_previews=False,
+        timeout=10)
     update.message.reply_text(
         "[{} {}](tg://user?id={}) {}".format(
             "" if user.first_name == None else user.first_name, ""
@@ -346,7 +347,8 @@ def ban(bot, update, args):
             can_send_messages=True,
             can_send_media_messages=True,
             can_send_other_messages=True,
-            can_add_web_page_previews=True)
+            can_add_web_page_previews=True,
+            timeout=10)
         update.message.chat.send_text(
             "[{} {}](tg://user?id={}) {}".format(
                 "" if user.first_name == None else user.first_name, "" if
@@ -385,7 +387,8 @@ def banpic(bot, update, args):
         can_send_messages=True,
         can_send_media_messages=False,
         can_send_other_messages=False,
-        can_add_web_page_previews=False)
+        can_add_web_page_previews=False,
+        timeout=10)
     update.message.reply_text(
         "[{} {}](tg://user?id={}) {}".format(
             "" if user.first_name == None else user.first_name, ""
@@ -408,7 +411,8 @@ def banpic(bot, update, args):
             can_send_messages=True,
             can_send_media_messages=True,
             can_send_other_messages=True,
-            can_add_web_page_previews=True)
+            can_add_web_page_previews=True,
+            timeout=10)
         update.message.chat.send_text(
             "[{} {}](tg://user?id={}) {}".format(
                 "" if user.first_name == None else user.first_name, "" if
@@ -446,7 +450,8 @@ def unban(bot, update):
         can_send_messages=True,
         can_send_media_messages=True,
         can_send_other_messages=True,
-        can_add_web_page_previews=True)
+        can_add_web_page_previews=True,
+        timeout=10)
     update.message.reply_text(
         "[{} {}](tg://user?id={}) {}".format(
             "" if user.first_name == None else user.first_name, "" if
@@ -672,7 +677,8 @@ updater.dispatcher.add_handler(
 updater.dispatcher.add_handler(
     CommandHandler("deltres", deltres, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("ban", ban, pass_args=True))
-updater.dispatcher.add_handler(CommandHandler("banpic", banpic, pass_args=True))
+updater.dispatcher.add_handler(
+    CommandHandler("banpic", banpic, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("unban", unban))
 updater.dispatcher.add_handler(CommandHandler("lstres", lstres))
 updater.dispatcher.add_handler(CommandHandler("shows", shows, pass_args=True))
