@@ -25,10 +25,13 @@ def logged(func):
 
 
 config_path = "config.yaml"
+action_path = "actions.yaml"
 config = {}
 import yaml, os
 with open(config_path, "r") as f:
     config = yaml.load(f)
+with open(action_path, "r") as f:
+    actions = yaml.load(f)["actions"]
 tg_key = config["apikey"]
 import telegram
 from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, RegexHandler
@@ -495,8 +498,8 @@ def list_cmd(bot, update):
 
 @logged
 def list_act(bot, update):
-    if "actions" in config:
-        act_txt = "\n".join("/{}".format(i) for i in config["actions"])
+    if len(actions) != 0:
+        act_txt = "\n".join("/{}".format(i) for i in actions)
         act_txt = "List of action commands:\n" + act_txt
     else:
         act_txt = "No action command defined"
@@ -686,11 +689,9 @@ updater.dispatcher.add_handler(CommandHandler("shows", shows, pass_args=True))
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
 
-if "actions" in config:
-    actions = config["actions"]
-    for key in actions:
-        fact = action_gen(**actions[key])
-        updater.dispatcher.add_handler(CommandHandler(key, fact))
+for key in actions:
+    fact = action_gen(**actions[key])
+    updater.dispatcher.add_handler(CommandHandler(key, fact))
 for regex in db["text_response"]:
     response = db["text_response"][regex]
     h = RegexHandler(regex, generate_reghandler(response))
