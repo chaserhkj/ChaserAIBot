@@ -665,7 +665,9 @@ def stock(bot, update, args):
         return
     ticker = args[0]
     stk = Stock(ticker, source="yahoo")
-    update.message.reply_text("{}({}) 最近交易价格为{:.2f}, 最近交易日变动{:.2f}({:.1f}%)".format(stk.name, stk.ticker, stk.price, stk.change, stk.cp))
+    name = stk.name
+    name = name.replace("&amp;", "&")
+    update.message.reply_text("{}({}) 最近交易价格为{:.2f}, 最近交易日变动{:.2f}({:.1f}%)".format(name, stk.ticker, stk.price, stk.change, stk.cp))
 
 
 
