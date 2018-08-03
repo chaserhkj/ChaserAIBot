@@ -52,6 +52,7 @@ if not "sticker_response" in db:
 if not "text_response" in db:
     db["text_response"] = {}
 import random
+from wallstreet import Stock
 
 group_config = config["groups"]
 reset_events = {}
@@ -657,6 +658,16 @@ def shows(bot, update, args):
         return
     update.message.reply_sticker(args[0])
 
+@logged
+def stock(bot, update, args):
+    if len(args) < 1:
+        update.message.reply_text("Usage: /stock <ticker>")
+        return
+    ticker = args[0]
+    stk = Stock(ticker, source="yahoo")
+    update.message.reply_text("{} 最近交易价格为{:.2f}, 最近交易日变动{:.2f}({:.1f}%)".format(stk.ticker, stk.price, stk.change, stk.cp))
+
+
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
@@ -685,6 +696,7 @@ updater.dispatcher.add_handler(
 updater.dispatcher.add_handler(CommandHandler("unban", unban))
 updater.dispatcher.add_handler(CommandHandler("lstres", lstres))
 updater.dispatcher.add_handler(CommandHandler("shows", shows, pass_args=True))
+updater.dispatcher.add_handler(CommandHandler("stock", stock, pass_args=True))
 
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
