@@ -670,6 +670,11 @@ def stock(bot, update, args):
     name = name.replace("&amp;", "&")
     update.message.reply_text("{}({}) 最近交易价格为{:.2f}, 最近交易日变动{:.2f}({:.1f}%)".format(name, stk.ticker, stk.price, stk.change, stk.cp))
 
+@logged
+def on_left(bot, update):
+    person = update.message.left_chat_member
+    chat = update.message.chat
+    bot.send_message(owner, "{}(username: {}, id: {}) just left group {}".format(person.full_name, person.username, person.id, chat.title))
 
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
@@ -703,6 +708,7 @@ updater.dispatcher.add_handler(CommandHandler("stock", stock, pass_args=True))
 
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
+updater.dispatcher.add_handler(MessageHandler(Filters.status_update.left_chat_member, on_left))
 
 for key in actions:
     fact = action_gen(**actions[key])
