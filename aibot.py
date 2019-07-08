@@ -196,6 +196,7 @@ def pin(bot, update, args):
         update.message.reply_text(
             "Usage:\n\nReplying to the message you wish to pin.\n/pin [time to pin]\n"
         )
+        return
     gid = update.message.chat.id
     mid = msg.message_id
     force_notify = check_config(gid, "force_notify")
