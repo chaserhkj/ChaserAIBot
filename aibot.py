@@ -51,6 +51,8 @@ if not "sticker_response" in db:
     db["sticker_response"] = {}
 if not "text_response" in db:
     db["text_response"] = {}
+if not "user_ids" in db:
+    db["user_ids"]= {}
 import random
 from wallstreet import Stock
 
@@ -551,6 +553,7 @@ def respond(bot, update, response):
 
 @logged
 def sticker_response(bot, update):
+    log_user_id(bot, update)
     sid = update.message.sticker.file_id
     if not sid in db["sticker_response"]:
         return
@@ -722,7 +725,15 @@ def callback_poll_member(bot, job):
         for uid in member_watches[gid]:
             watch_member(gid, uid, bot)
 
-
+def log_user_id(bot, update):
+    gid = update.message.chat.id
+    if check_config(gid, "log_uid"):
+        uid = update.message.from_user.id
+        uname = update.message.from_user.username
+        uid_dict = db["user_ids"]
+        uid_dict[uname] = uid
+        db["user_ids"] = uid_dict
+        db.sync()
 
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
@@ -767,6 +778,8 @@ for regex in db["text_response"]:
     h = RegexHandler(regex, generate_reghandler(response))
     updater.dispatcher.add_handler(h)
     regex_handlers[regex] = h
+updater.dispatcher.add_handler(
+    MessageHandler(Filters.all, log_user_id))
 
 updater.start_webhook(listen='127.0.0.1', port=9990, url_path=tg_key)
 updater.bot.set_webhook(url='https://tgbot.chaserhkj.me/ai/' + tg_key)
