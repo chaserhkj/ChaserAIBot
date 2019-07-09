@@ -7,3 +7,14 @@ groups:
     -1001235265562:
         title_prefix: "BGM NA"
         title_reset_delay: 7200
+        log_uid: True
+watches:
+    count:
+        -1001235265562:
+            notify: False
+    member:
+        -1001235265562:
+            794359917:
+                notify: True
+                kick: False # Put uid to kick here
+                message: "Executing Unit Test Protocol"
