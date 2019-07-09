@@ -670,11 +670,59 @@ def stock(bot, update, args):
     name = name.replace("&amp;", "&")
     update.message.reply_text("{}({}) 最近交易价格为{:.2f}, 最近交易日变动{:.2f}({:.1f}%)".format(name, stk.ticker, stk.price, stk.change, stk.cp))
 
-@logged
-def on_left(bot, update):
-    person = update.message.left_chat_member
-    chat = update.message.chat
-    bot.send_message(owner, "{}(username: {}, id: {}) just left group {}".format(person.full_name, person.username, person.id, chat.title))
+count_watches = config["watches"]["count"]
+old_member_count = {}
+
+def watch_count(gid, bot):
+    try:
+        count = bot.get_chat_members_count(gid)
+    except telegram.TelegramError:
+        return
+    if not gid in old_member_count:
+        old_member_count[gid] = count
+    if count < old_member_count[gid]:
+        chat = bot.get_chat(gid)
+        bot.send_message(owner, "{} member(s) have left group {}".format(old_member_count[gid] - count, chat.title))
+        if count_watches[gid]["notify"]:
+            bot.send_message(gid, "{} member(s) have left".format(old_member_count[gid] - count))
+    old_member_count[gid] = count
+
+def callback_poll_count(bot, job):
+    for gid in count_watches:
+        watch_count(gid, bot)
+
+member_watches = config["watches"]["member"]
+old_status = {}
+
+def watch_member(gid, uid, bot):
+    key = "{}_{}".format(gid, uid)
+    try:
+        member = bot.get_chat_member(gid, uid)
+    except telegram.TelegramError:
+        return
+    if member == None:
+        return
+    user = member.user
+    status = member.status
+    if not key in old_status:
+        old_status[key] = status
+    if status == 'left' and status != old_status[key]:
+        chat = bot.get_chat(gid)
+        bot.send_message(owner, "{} have left group {}".format(user.full_name, chat.title))
+        if member_watches[gid][uid]["notify"]:
+            bot.send_message(gid, "{} have left".format(user.full_name))
+            if member_watches[gid][uid]["message"]:
+                bot.send_message(gid, member_watches[gid][uid]["message"])
+        if member_watches[gid][uid]["kick"]:
+            bot.kick_chat_member(gid, member_watches[gid][uid]["kick"])
+    old_status[key] = status
+    
+def callback_poll_member(bot, job):
+    for gid in member_watches:
+        for uid in member_watches[gid]:
+            watch_member(gid, uid, bot)
+
+
 
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
@@ -708,7 +756,8 @@ updater.dispatcher.add_handler(CommandHandler("stock", stock, pass_args=True))
 
 updater.dispatcher.add_handler(
     MessageHandler(Filters.sticker, sticker_response))
-updater.dispatcher.add_handler(MessageHandler(Filters.status_update.left_chat_member, on_left))
+updater.job_queue.run_repeating(callback_poll_member, interval=5, first=0)
+updater.job_queue.run_repeating(callback_poll_count, interval=5, first=0)
 
 for key in actions:
     fact = action_gen(**actions[key])
