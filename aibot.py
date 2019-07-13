@@ -822,8 +822,8 @@ updater.dispatcher.add_handler(CommandHandler("getsid", getsid))
 updater.dispatcher.add_handler(CommandHandler("getuid", getuid))
 updater.dispatcher.add_handler(CommandHandler("addquote", addquote))
 updater.dispatcher.add_handler(CommandHandler("lsquotes", lsquotes))
-updater.dispatcher.add_hadnler(CallbackQueryHandler(lsquotes_previous, pattern="lsquotes_previous"))
-updater.dispatcher.add_hadnler(CallbackQueryHandler(lsquotes_next, pattern="lsquotes_next"))
+updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_previous, pattern="lsquotes_previous"))
+updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_next, pattern="lsquotes_next"))
 updater.dispatcher.add_handler(
     CommandHandler("setsres", setsres, pass_args=True))
 updater.dispatcher.add_handler(
