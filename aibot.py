@@ -34,7 +34,7 @@ with open(action_path, "r") as f:
     actions = yaml.load(f)["actions"]
 tg_key = config["apikey"]
 import telegram
-from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, RegexHandler
+from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, RegexHandler, CallbackQueryHandler
 from io import BytesIO
 from telegram import InputFile
 import pytimeparse
@@ -52,7 +52,9 @@ if not "sticker_response" in db:
 if not "text_response" in db:
     db["text_response"] = {}
 if not "user_ids" in db:
-    db["user_ids"]= {}
+    db["user_ids"] = {}
+if not "quotes" in db:
+    db["quotes"] = {}
 import random
 from wallstreet import Stock
 
@@ -735,6 +737,76 @@ def log_user_id(bot, update):
         db["user_ids"] = uid_dict
         db.sync()
 
+def addquote(bot, update):
+    msg = update.message.reply_to_message
+    if msg == None:
+        update.message.reply_text(
+            "Usage:\n\nReplying to the message you wish to quote."
+        )
+        return
+    key = "{}_{}".format(msg.chat.id, msg.message_id)
+    msg.quote_key = key
+    quotes = db["quotes"]
+    quotes[key] = msg
+    db["quotes"] = quotes
+    db.sync()
+    update.message.reply_text("Quote added.")
+
+ls_quote_sessions = {}
+
+def fmt_quotes(session):
+    i = session.i
+    j = i + session.di
+    quotes = [session.data[key] for key in session.keys[i:j]]
+    output = []
+    for quote in quotes:
+        output.append("ID:{}\nBy {}:\n{}".format(quote.quote_key, quote.from_user.full_name, quote.text))
+    return "\n\n".join(output)
+
+def lsquotes(bot, update):
+    msg = update.message
+    key = "{}_{}".format(msg.chat.id, msg.message_id)
+    session = object()
+    session.data = db["quotes"]
+    session.keys = list(session.data.keys())
+    session.i = 0
+    session.di = 10
+    btn_list = [[telegram.InlineKeyboardButton("Previous Page", callback_data="lsquotes_previous")], [telegram.InlineKeyboardButton("Next Page", callback_data="lsquotes_next")]]
+    markup = telegram.InlineKeyboardMarkup(btn_list)
+    session.msg = msg.reply_text(fmt_quotes(session), reply_markup = markup)
+    if len(ls_quote_sessions) >= 10:
+        ls_quote_sessions = {}
+    ls_quote_sessions[key] = session
+
+def lsquotes_previous(bot, update):
+    query = update.callback_query
+    msg = query.message
+    session_key = "{}_{}".format(msg.chat.id, msg.message_id)
+    if session_key not in ls_quote_sessions:
+        msg.edit_text("Session not found, maybe expired, please /lsquotes again to start a new one.")
+        return
+    session = ls_quote_sessions[session_key]
+    i = session.i - session.di
+    if i <= 0:
+        return
+    session.i = i
+    msg.edit_text(fmt_quotes(session))
+
+
+def lsquotes_next(bot, update):
+    query = update.callback_query
+    msg = query.message
+    session_key = "{}_{}".format(msg.chat.id, msg.message_id)
+    if session_key not in ls_quote_sessions:
+        msg.edit_text("Session not found, maybe expired, please /lsquotes again to start a new one.")
+        return
+    session = ls_quote_sessions[session_key]
+    i = session.i + session.di
+    if i >= len(session.data):
+        return
+    session.i = i
+    msg.edit_text(fmt_quotes(session))
+
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
@@ -748,6 +820,10 @@ updater.dispatcher.add_handler(CommandHandler("help", list_cmd))
 updater.dispatcher.add_handler(CommandHandler("actions", list_act))
 updater.dispatcher.add_handler(CommandHandler("getsid", getsid))
 updater.dispatcher.add_handler(CommandHandler("getuid", getuid))
+updater.dispatcher.add_handler(CommandHandler("addquote", addquote))
+updater.dispatcher.add_handler(CommandHandler("lsquotes", lsquotes))
+updater.dispatcher.add_hadnler(CallbackQueryHandler(lsquotes_previous, pattern="lsquotes_previous"))
+updater.dispatcher.add_hadnler(CallbackQueryHandler(lsquotes_next, pattern="lsquotes_next"))
 updater.dispatcher.add_handler(
     CommandHandler("setsres", setsres, pass_args=True))
 updater.dispatcher.add_handler(
