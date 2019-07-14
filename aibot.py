@@ -40,6 +40,7 @@ from telegram import InputFile
 import pytimeparse
 import requests
 from pprint import pformat
+import json
 tenorkey = config["tenorkey"]
 res = requests.get("https://api.tenor.com/v1/anonid", params={"key": tenorkey})
 anonid = res.json()["anon_id"]
@@ -66,6 +67,10 @@ gif_cache = {}
 regex_handlers = {}
 owner = config["owner"]
 response_cd = set()
+quote_moderator = [owner]
+if "quote_moderator" in config:
+    quote_moderator.extend(config["quote_moderator"])
+
 
 
 def check_owner(func):
@@ -756,7 +761,16 @@ def log_user_id(bot, update):
         db["user_ids"] = uid_dict
         db.sync()
 
-@check_owner
+pending_quote = {}
+
+def get_quote_link(q_id):
+    if not q_id.startswith("-100"):
+        return "" 
+    q_id = q_id.split("_")
+    gid = q_id[0][4:]
+    mid = q_id[1]
+    return "t.me/c/{}/{}\n".format(gid, mid)
+
 @logged
 def addquote(bot, update):
     msg = update.message.reply_to_message
@@ -766,22 +780,21 @@ def addquote(bot, update):
         )
         return
     key = "{}_{}".format(msg.chat.id, msg.message_id)
+    if key in pending_quote:
+        update.message.reply_text("Quote already waiting for approval")
+        return
     msg.quote_key = key
-    quotes = db["quotes"]
-    quotes[key] = msg
-    db["quotes"] = quotes
-    db.sync()
-    update.message.reply_text("Quote added.")
+    msg.cmd_msg = update.message
+    pending_quote[key] = msg
+    content = "ID:{}\n{}By {}:\n{}".format(msg.quote_key, get_quote_link(msg.quote_key),msg.from_user.full_name, msg.text or "[No Text Present]")
+    appr_btn_list = [[telegram.InlineKeyboardButton("Approve", callback_data="approve_quote:{}".format(key))], [telegram.InlineKeyboardButton("Decline", callback_data="decline_quote:{}".format(key))]]
+    appr_markup = telegram.InlineKeyboardMarkup(appr_btn_list)
+    for uid in quote_moderator:
+        bot.send_message(uid, content, reply_markup=appr_markup)
+    update.message.reply_text("Quote pending approval.")
+
 
 ls_quote_sessions = {}
-
-def get_quote_link(q_id):
-    if not q_id.startswith("-100"):
-        return "" 
-    q_id = q_id.split("_")
-    gid = q_id[0][4:]
-    mid = q_id[1]
-    return "t.me/c/{}/{}\n".format(gid, mid)
 
 def fmt_quotes(session):
     i = session['i']
@@ -796,6 +809,7 @@ def fmt_quotes(session):
 btn_list = [[telegram.InlineKeyboardButton("Previous Page", callback_data="lsquotes_previous")], [telegram.InlineKeyboardButton("Next Page", callback_data="lsquotes_next")]]
 markup = telegram.InlineKeyboardMarkup(btn_list)
 
+@check_owner
 @logged
 def lsquotes(bot, update):
     global ls_quote_sessions
@@ -844,6 +858,34 @@ def lsquotes_next(bot, update):
         return
     session['i'] = i
     msg.edit_text(fmt_quotes(session), reply_markup = markup)
+
+def approve_quote(bot, update):
+    query = update.callback_query
+    msg = query.message
+    pending_id = query.data.split(":")[1]
+    if pending_id not in pending_quote:
+        msg.edit_text("Pending quote not found, maybe already processed by another moderator")
+        return
+    quote = pending_quote[pending_id]
+    quotes = db["quotes"]
+    quotes[quote.quote_key] = quote
+    db["quotes"] = quotes
+    db.sync()
+    del pending_quote[pending_id]
+    quote.cmd_msg.reply_text("Approved")
+    msg.edit_text("{}\n\nApproved".format(msg.text))
+
+def decline_quote(bot, update):
+    query = update.callback_query
+    msg = query.message
+    pending_id = query.data.split(":")[1]
+    if pending_id not in pending_quote:
+        msg.edit_text("Pending quote not found, maybe already processed by another moderator")
+        return
+    quote = pending_quote[pending_id]
+    del pending_quote[pending_id]
+    quote.cmd_msg.reply_text("Declined")
+    msg.edit_text("{}\n\nDeclined".format(msg.text))
 
 @check_owner
 @logged
@@ -901,6 +943,8 @@ updater.dispatcher.add_handler(CommandHandler("lsquotes", lsquotes))
 updater.dispatcher.add_handler(CommandHandler("rmquote", rmquote, pass_args=True))
 updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_previous, pattern="lsquotes_previous"))
 updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_next, pattern="lsquotes_next"))
+updater.dispatcher.add_handler(CallbackQueryHandler(approve_quote, pattern=r"approve_quote:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(decline_quote, pattern=r"decline_quote:.*"))
 updater.dispatcher.add_handler(
     CommandHandler("setsres", setsres, pass_args=True))
 updater.dispatcher.add_handler(
