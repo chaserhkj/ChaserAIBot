@@ -16,7 +16,7 @@ def logged(func):
                 update = argd["update"]
             else:
                 update = argl[1]
-            update.message.reply_text("Exception: {}".format(str(e)))
+            update.message.reply_text("{}: {}".format(str(type(e)), str(e)))
             raise e
         logging.getLogger().debug("Exiting: " + func.__name__)
         return res
@@ -88,6 +88,21 @@ def check_restrict(func):
         member = bot.get_chat_member(update.message.chat.id, uid)
         if not (member.status == 'creator' or member.can_restrict_members):
             update.message.reply_text("你没有管理小黑屋的权限哦")
+            update.message.chat.send_sticker(
+                sticker="CAADBQADJwIAAgsiPA7OflnL6kErDgI")
+        else:
+            func(*arg, **argd)
+
+    return new_func
+
+def check_admin(func):
+    def new_func(*arg, **argd):
+        update = argd.get("update", arg[1])
+        bot = argd.get("bot", arg[0])
+        uid = update.message.from_user.id
+        member = bot.get_chat_member(update.message.chat.id, uid)
+        if not (member.status == 'creator' or member.status == 'administrator'):
+            update.message.reply_text("你没有管理员权限哦")
             update.message.chat.send_sticker(
                 sticker="CAADBQADJwIAAgsiPA7OflnL6kErDgI")
         else:
@@ -487,6 +502,10 @@ def list_cmd(bot, update):
 /setpic    : Set group chat picture
 /pin       : Pin message
 /unpin     : Unpin pinned message
+/quote     : Print a random quote
+/addquote  : Add a message to the quotes
+/rmquote   : Remove a message from the quotes
+/lsquotes  : Show quotes list
 /actions   : Show action commands
 /setsres   : Set up sticker response
 /delsres   : Delete sticker response
@@ -737,6 +756,8 @@ def log_user_id(bot, update):
         db["user_ids"] = uid_dict
         db.sync()
 
+@check_owner
+@logged
 def addquote(bot, update):
     msg = update.message.reply_to_message
     if msg == None:
@@ -765,11 +786,11 @@ def get_quote_link(q_id):
 def fmt_quotes(session):
     i = session['i']
     j = i + session['di']
-    header = "Quotes {}-{}, total {}\n\n".format(i + 1, i + j, len(session["data"]))
+    header = "Quotes {}-{}, total {}\n\n".format(i + 1, j, len(session["data"]))
     quotes = [session['data'][key] for key in session['keys'][i:j]]
     output = []
     for quote in quotes:
-        output.append("ID:{}\n{}By {}:\n{}".format(quote.quote_key, get_quote_link(quote.quote_key),quote.from_user.full_name, quote.text))
+        output.append("ID:{}\n{}By {}:\n{}".format(quote.quote_key, get_quote_link(quote.quote_key),quote.from_user.full_name, quote.text or "[No Text Present]"))
     return header + "\n\n".join(output)
 
 btn_list = [[telegram.InlineKeyboardButton("Previous Page", callback_data="lsquotes_previous")], [telegram.InlineKeyboardButton("Next Page", callback_data="lsquotes_next")]]
@@ -824,6 +845,7 @@ def lsquotes_next(bot, update):
     session['i'] = i
     msg.edit_text(fmt_quotes(session), reply_markup = markup)
 
+@check_owner
 @logged
 def rmquote(bot, update, args):
     if len(args) < 1:
@@ -841,12 +863,24 @@ def rmquote(bot, update, args):
 
 @logged
 def quote(bot, update):
-    keys = list(db["quotes"].keys())
-    key = random.choice(keys)
-    gid_to = update.message.chat.id
-    gid_from = db["quotes"][key].chat.id
-    msg_id = db["quotes"][key].message_id
-    bot.forward_message(gid_to, gid_from, msg_id)
+    while True:
+        keys = list(db["quotes"].keys())
+        if len(keys) == 0:
+            update.message.reply_text("No quotes present")
+            return
+        key = random.choice(keys)
+        gid_to = update.message.chat.id
+        gid_from = db["quotes"][key].chat.id
+        msg_id = db["quotes"][key].message_id
+        try:
+            bot.forward_message(gid_to, gid_from, msg_id)
+            break
+        except telegram.error.BadRequest:
+            q_dict = db["quotes"]
+            del q_dict[key]
+            db["quotes"] = q_dict
+            db.sync()
+
 
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
