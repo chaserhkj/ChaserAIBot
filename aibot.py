@@ -754,58 +754,99 @@ def addquote(bot, update):
 
 ls_quote_sessions = {}
 
+def get_quote_link(q_id):
+    if not q_id.startswith("-100"):
+        return "" 
+    q_id = q_id.split("_")
+    gid = q_id[0][4:]
+    mid = q_id[1]
+    return "t.me/c/{}/{}\n".format(gid, mid)
+
 def fmt_quotes(session):
-    i = session.i
-    j = i + session.di
-    quotes = [session.data[key] for key in session.keys[i:j]]
+    i = session['i']
+    j = i + session['di']
+    header = "Quotes {}-{}, total {}\n\n".format(i + 1, i + j, len(session["data"]))
+    quotes = [session['data'][key] for key in session['keys'][i:j]]
     output = []
     for quote in quotes:
-        output.append("ID:{}\nBy {}:\n{}".format(quote.quote_key, quote.from_user.full_name, quote.text))
-    return "\n\n".join(output)
+        output.append("ID:{}\n{}By {}:\n{}".format(quote.quote_key, get_quote_link(quote.quote_key),quote.from_user.full_name, quote.text))
+    return header + "\n\n".join(output)
 
+btn_list = [[telegram.InlineKeyboardButton("Previous Page", callback_data="lsquotes_previous")], [telegram.InlineKeyboardButton("Next Page", callback_data="lsquotes_next")]]
+markup = telegram.InlineKeyboardMarkup(btn_list)
+
+@logged
 def lsquotes(bot, update):
+    global ls_quote_sessions
     msg = update.message
-    key = "{}_{}".format(msg.chat.id, msg.message_id)
-    session = object()
-    session.data = db["quotes"]
-    session.keys = list(session.data.keys())
-    session.i = 0
-    session.di = 10
-    btn_list = [[telegram.InlineKeyboardButton("Previous Page", callback_data="lsquotes_previous")], [telegram.InlineKeyboardButton("Next Page", callback_data="lsquotes_next")]]
-    markup = telegram.InlineKeyboardMarkup(btn_list)
-    session.msg = msg.reply_text(fmt_quotes(session), reply_markup = markup)
+    key = "{}".format(msg.chat.id)
+    session = {}
+    session['data'] = db["quotes"]
+    session['keys'] = list(session['data'].keys())
+    session['i'] = 0
+    session['di'] = 3
+    if len(session['data']) == 0:
+        msg.reply_text("No quotes found")
+        return
+    session['msg'] = msg.reply_text(fmt_quotes(session), reply_markup = markup)
     if len(ls_quote_sessions) >= 10:
         ls_quote_sessions = {}
     ls_quote_sessions[key] = session
 
 def lsquotes_previous(bot, update):
+    global ls_quote_sessions
     query = update.callback_query
     msg = query.message
-    session_key = "{}_{}".format(msg.chat.id, msg.message_id)
+    session_key = "{}".format(msg.chat.id)
     if session_key not in ls_quote_sessions:
         msg.edit_text("Session not found, maybe expired, please /lsquotes again to start a new one.")
         return
     session = ls_quote_sessions[session_key]
-    i = session.i - session.di
-    if i <= 0:
+    i = session['i'] - session['di']
+    if i < 0:
         return
-    session.i = i
-    msg.edit_text(fmt_quotes(session))
+    session['i'] = i
+    msg.edit_text(fmt_quotes(session), reply_markup = markup)
 
 
 def lsquotes_next(bot, update):
+    global ls_quote_sessions
     query = update.callback_query
     msg = query.message
-    session_key = "{}_{}".format(msg.chat.id, msg.message_id)
+    session_key = "{}".format(msg.chat.id)
     if session_key not in ls_quote_sessions:
         msg.edit_text("Session not found, maybe expired, please /lsquotes again to start a new one.")
         return
     session = ls_quote_sessions[session_key]
-    i = session.i + session.di
-    if i >= len(session.data):
+    i = session['i'] + session['di']
+    if i >= len(session['data']):
         return
-    session.i = i
-    msg.edit_text(fmt_quotes(session))
+    session['i'] = i
+    msg.edit_text(fmt_quotes(session), reply_markup = markup)
+
+@logged
+def rmquote(bot, update, args):
+    if len(args) < 1:
+        update.message.reply_text("Usage: /rmquote <quote_id>")
+        return
+    q_id = args[0]
+    if q_id not in db["quotes"]:
+        update.message.reply_text("Quote ID not found")
+        return
+    q_dict = db["quotes"]
+    del q_dict[q_id]
+    db["quotes"] = q_dict
+    db.sync()
+    update.message.reply_text("Quote removed")
+
+@logged
+def quote(bot, update):
+    keys = list(db["quotes"].keys())
+    key = random.choice(keys)
+    gid_to = update.message.chat.id
+    gid_from = db["quotes"][key].chat.id
+    msg_id = db["quotes"][key].message_id
+    bot.forward_message(gid_to, gid_from, msg_id)
 
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
@@ -821,7 +862,9 @@ updater.dispatcher.add_handler(CommandHandler("actions", list_act))
 updater.dispatcher.add_handler(CommandHandler("getsid", getsid))
 updater.dispatcher.add_handler(CommandHandler("getuid", getuid))
 updater.dispatcher.add_handler(CommandHandler("addquote", addquote))
+updater.dispatcher.add_handler(CommandHandler("quote", quote))
 updater.dispatcher.add_handler(CommandHandler("lsquotes", lsquotes))
+updater.dispatcher.add_handler(CommandHandler("rmquote", rmquote, pass_args=True))
 updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_previous, pattern="lsquotes_previous"))
 updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_next, pattern="lsquotes_next"))
 updater.dispatcher.add_handler(
