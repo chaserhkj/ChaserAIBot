@@ -1,0 +1,5 @@
+wallstreet
+python-telegram-bot
+pytimeparse
+PyYAML
+requests
