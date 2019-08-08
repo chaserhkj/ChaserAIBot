@@ -522,6 +522,7 @@ def list_cmd(bot, update):
 /ban       : Ban user to send messages for a certain period of time
 /banpic    : Ban user to send pictures for a certain period of time
 /unban     : Unban user from previous bans
+/duel      : Invite other player to a duel
 /help      : Show non-action commands"""
     update.message.reply_text(help_txt)
 
@@ -923,7 +924,14 @@ def quote(bot, update):
             db["quotes"] = q_dict
             db.sync()
 
-
+def duel(bot, update):
+    msg = update.message.reply_to_message
+    if msg == None:
+        update.message.reply_text(
+            "用法：请使用此命令回复你想决斗的人"
+        )
+        return
+        
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
@@ -941,6 +949,7 @@ updater.dispatcher.add_handler(CommandHandler("addquote", addquote))
 updater.dispatcher.add_handler(CommandHandler("quote", quote))
 updater.dispatcher.add_handler(CommandHandler("lsquotes", lsquotes))
 updater.dispatcher.add_handler(CommandHandler("rmquote", rmquote, pass_args=True))
+updater.dispatcher.add_handler(CommandHandler("duel", duel))
 updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_previous, pattern="lsquotes_previous"))
 updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_next, pattern="lsquotes_next"))
 updater.dispatcher.add_handler(CallbackQueryHandler(approve_quote, pattern=r"approve_quote:.*"))
