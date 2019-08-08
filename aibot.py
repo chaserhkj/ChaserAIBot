@@ -360,7 +360,7 @@ def ban_user(bot, chat, user, ban_time=None):
         can_send_other_messages=False,
         can_add_web_page_previews=False,
         timeout=10)
-    chat.send_message("{} 跟我乖乖到小黑屋里走一趟吧".format(user.mention_markdown()),
+    chat.send_message("{} 跟我乖乖到小黑屋里走一趟吧, 刑期: {}".format(user.mention_markdown(), "无限" if ban_time == None else ban_time),
         parse_mode="Markdown")
     chat.send_sticker(sticker="CAADBQADJwIAAgsiPA7OflnL6kErDgI")
     if ban_time == None:
@@ -1017,7 +1017,23 @@ def duel(bot, update, real = False):
 
     queue.run_once(duel_expire, 300)
 
+real_duel_cd = {}
 def real_duel(bot, update):
+    global real_duel_cd 
+    gid = update.message.chat.id
+    uid = update.message.from_user.id
+    if gid not in real_duel_cd:
+        real_duel_cd[gid] = {}
+    if uid in real_duel_cd[gid]:
+        update.message.reply_text("此命令仍在冷却状态，你不能使用")
+        return
+
+    def remove_event(bot, job):
+        del real_duel_cd[gid][uid]
+
+    event = queue.run_once(remove_event, 30)
+    real_duel_cd[gid][uid] = event
+
     duel(bot, update, True)
     
 def handle_duel(bot, update, real = False):
@@ -1043,7 +1059,7 @@ def handle_duel(bot, update, real = False):
     duel_msg = chat.send_message("初始HP: \n100 {}\n100 {}".format(from_user_text,to_user_text), parse_mode="Markdown")
 
     round_time = 5
-    ban_time = "1m"
+    ban_time = "5m"
     def process_duel(bot, job):
         nonlocal from_user_hp, to_user_hp, rnd
         from_user_point = random.randrange(1, 101)
