@@ -507,6 +507,7 @@ def list_cmd(bot, update):
 /setpic    : Set group chat picture
 /pin       : Pin message
 /unpin     : Unpin pinned message
+/postit    : Post the message to the group channel
 /quote     : Print a random quote
 /addquote  : Add a message to the quotes
 /rmquote   : Remove a message from the quotes
@@ -761,6 +762,37 @@ def log_user_id(bot, update):
         db["user_ids"] = uid_dict
         db.sync()
 
+pending_posts = {}
+
+@logged
+def postit(bot, update):
+    msg = update.message.reply_to_message
+    if msg == None:
+        update.message.reply_text(
+            "Usage:\n\nReplying to the message you wish to post."
+        )
+        return
+    gid = msg.chat.id
+    mid = msg.message_id
+    key = "{}_{}".format(gid, mid)
+    chan_id = check_config(gid, "channel")
+    if not chan_id:
+        update.message.reply_text("No channel configured for this group")
+        return
+    msg.post_key = key
+    content = "Pending Post From {}\nID:{}\n{}By {}:\n{}".format(update.message.chat.title, msg.post_key, get_quote_link(msg.post_key),msg.from_user.full_name, msg.text or "[No Text Present]")
+    appr_btn_list = [[telegram.InlineKeyboardButton("Approve", callback_data="approve_post:{}".format(key))], [telegram.InlineKeyboardButton("Decline", callback_data="decline_post:{}".format(key))]]
+    appr_markup = telegram.InlineKeyboardMarkup(appr_btn_list)
+    admins = bot.get_chat_administrators(chan_id)
+    for member in admins:
+        if not member.user.is_bot:
+            try:
+                bot.send_message(member.user.id, content, reply_markup=appr_markup)
+            except telegram.error.Unauthorized:
+                continue
+    msg.prompt = update.message.reply_text("Post pending approval.")
+    pending_posts[key] = msg
+
 pending_quote = {}
 
 def get_quote_link(q_id):
@@ -780,18 +812,20 @@ def addquote(bot, update):
         )
         return
     key = "{}_{}".format(msg.chat.id, msg.message_id)
+    if key in db["quotes"]:
+        update.message.reply_text("Quote already added")
+        return
     if key in pending_quote:
         update.message.reply_text("Quote already waiting for approval")
         return
     msg.quote_key = key
-    msg.cmd_msg = update.message
-    pending_quote[key] = msg
-    content = "ID:{}\n{}By {}:\n{}".format(msg.quote_key, get_quote_link(msg.quote_key),msg.from_user.full_name, msg.text or "[No Text Present]")
+    content = "Pending Quote\nID:{}\n{}By {}:\n{}".format(msg.quote_key, get_quote_link(msg.quote_key),msg.from_user.full_name, msg.text or "[No Text Present]")
     appr_btn_list = [[telegram.InlineKeyboardButton("Approve", callback_data="approve_quote:{}".format(key))], [telegram.InlineKeyboardButton("Decline", callback_data="decline_quote:{}".format(key))]]
     appr_markup = telegram.InlineKeyboardMarkup(appr_btn_list)
     for uid in quote_moderator:
         bot.send_message(uid, content, reply_markup=appr_markup)
-    update.message.reply_text("Quote pending approval.")
+    msg.prompt = update.message.reply_text("Quote pending approval.")
+    pending_quote[key] = msg
 
 
 ls_quote_sessions = {}
@@ -872,7 +906,7 @@ def approve_quote(bot, update):
     db["quotes"] = quotes
     db.sync()
     del pending_quote[pending_id]
-    quote.cmd_msg.reply_text("Approved")
+    quote.prompt.edit_text("Approved")
     msg.edit_text("{}\n\nApproved".format(msg.text))
 
 def decline_quote(bot, update):
@@ -884,7 +918,37 @@ def decline_quote(bot, update):
         return
     quote = pending_quote[pending_id]
     del pending_quote[pending_id]
-    quote.cmd_msg.reply_text("Declined")
+    quote.prompt.edit_text("Declined")
+    msg.edit_text("{}\n\nDeclined".format(msg.text))
+
+def approve_post(bot, update):
+    query = update.callback_query
+    msg = query.message
+    pending_id = query.data.split(":")[1]
+    gid = int(pending_id.split("_")[0])
+    chan_id = check_config(gid, "channel")
+    if not chan_id:
+        msg.edit_text("Channel not configured, something terrible happened")
+        return
+    if pending_id not in pending_posts:
+        msg.edit_text("Pending post not found, maybe already processed by another moderator")
+        return
+    post = pending_posts[pending_id]
+    bot.forward_message(chan_id, post.chat.id, post.message_id)
+    del pending_posts[pending_id]
+    post.prompt.edit_text("Approved")
+    msg.edit_text("{}\n\nApproved".format(msg.text))
+
+def decline_post(bot, update):
+    query = update.callback_query
+    msg = query.message
+    pending_id = query.data.split(":")[1]
+    if pending_id not in pending_posts:
+        msg.edit_text("Pending post not found, maybe already processed by another moderator")
+        return
+    post = pending_posts[pending_id]
+    del pending_posts[pending_id]
+    post.prompt.edit_text("Declined")
     msg.edit_text("{}\n\nDeclined".format(msg.text))
 
 @check_owner
@@ -937,6 +1001,7 @@ updater.dispatcher.add_handler(CommandHandler("help", list_cmd))
 updater.dispatcher.add_handler(CommandHandler("actions", list_act))
 updater.dispatcher.add_handler(CommandHandler("getsid", getsid))
 updater.dispatcher.add_handler(CommandHandler("getuid", getuid))
+updater.dispatcher.add_handler(CommandHandler("postit", postit))
 updater.dispatcher.add_handler(CommandHandler("addquote", addquote))
 updater.dispatcher.add_handler(CommandHandler("quote", quote))
 updater.dispatcher.add_handler(CommandHandler("lsquotes", lsquotes))
@@ -945,6 +1010,8 @@ updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_previous, pattern="
 updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_next, pattern="lsquotes_next"))
 updater.dispatcher.add_handler(CallbackQueryHandler(approve_quote, pattern=r"approve_quote:.*"))
 updater.dispatcher.add_handler(CallbackQueryHandler(decline_quote, pattern=r"decline_quote:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(approve_post, pattern=r"approve_post:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(decline_post, pattern=r"decline_post:.*"))
 updater.dispatcher.add_handler(
     CommandHandler("setsres", setsres, pass_args=True))
 updater.dispatcher.add_handler(
