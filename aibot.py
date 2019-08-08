@@ -337,14 +337,20 @@ def ban(bot, update, args):
             "Usage:\n\nReplying to the user you wish to ban.\n/ban [Ban Time]\n"
         )
         return
-    member = update.message.chat.get_member(msg.from_user.id)
+    if len(args) == 0:
+        ban_time = None
+    else:
+        ban_time = args[0]
+    ban_user(bot, update.message.chat, msg.from_user, ban_time)
+
+def ban_user(bot, chat, user, ban_time=None):
+    member = chat.get_member(user.id)
     if member.status == 'creator' or member.status == 'administrator':
-        update.message.reply_text("呃呃，我没有处理管理员的权限啊！")
-        update.message.chat.send_sticker(
+        chat.send_message("呃呃，我没有处理管理员的权限啊！")
+        chat.send_sticker(
             sticker="CAADBQADJwEAAgsiPA5l3hNO8JyiPAI")
         return
-    user = member.user
-    gid = update.message.chat.id
+    gid = chat.id
     uid = user.id
     bot.restrict_chat_member(
         gid,
@@ -354,16 +360,12 @@ def ban(bot, update, args):
         can_send_other_messages=False,
         can_add_web_page_previews=False,
         timeout=10)
-    update.message.reply_text(
-        "[{} {}](tg://user?id={}) {}".format(
-            "" if user.first_name == None else user.first_name, ""
-            if user.last_name == None else user.last_name, user.id,
-            "跟我乖乖到小黑屋里走一趟吧"),
+    chat.send_message("{} 跟我乖乖到小黑屋里走一趟吧".format(user.mention_markdown()),
         parse_mode="Markdown")
-    update.message.chat.send_sticker(sticker="CAADBQADJwIAAgsiPA7OflnL6kErDgI")
-    if len(args) == 0:
+    chat.send_sticker(sticker="CAADBQADJwIAAgsiPA7OflnL6kErDgI")
+    if ban_time == None:
         return
-    delay = pytimeparse.parse(args[0])
+    delay = pytimeparse.parse(ban_time)
     if not gid in unban_events:
         unban_events[gid] = {}
     if uid in unban_events[gid]:
@@ -378,12 +380,10 @@ def ban(bot, update, args):
             can_send_other_messages=True,
             can_add_web_page_previews=True,
             timeout=10)
-        update.message.chat.send_message(
-            text="[{} {}](tg://user?id={}) {}".format(
-                "" if user.first_name == None else user.first_name, "" if
-                user.last_name == None else user.last_name, user.id, "刑满释放了！"),
+        chat.send_message(
+            text="{}刑满释放了！".format(user.mention_markdown()),
             parse_mode="Markdown")
-        update.message.chat.send_sticker(
+        chat.send_sticker(
             sticker="CAADBQADbAEAAgsiPA5ZwMJd8rkuxgI")
         del unban_events[gid][uid]
 
@@ -988,7 +988,7 @@ def quote(bot, update):
             db["quotes"] = q_dict
             db.sync()
 
-def duel(bot, update):
+def duel(bot, update, real = False):
     msg = update.message.reply_to_message
     if msg == None:
         update.message.reply_text(
@@ -1000,17 +1000,27 @@ def duel(bot, update):
     if to_user.is_bot:
         update.message.reply_text("你的决斗被Bot的林肯法球挡下了")
         return
-    btn_list = [[telegram.InlineKeyboardButton("接受", callback_data="duel:{},{}".format(from_user.id,to_user.id))]]
+    if real:
+        btn_list = [[telegram.InlineKeyboardButton("接受", callback_data="real_duel:{},{}".format(from_user.id,to_user.id))]]
+    else:
+        btn_list = [[telegram.InlineKeyboardButton("接受", callback_data="duel:{},{}".format(from_user.id,to_user.id))]]
     markup = telegram.InlineKeyboardMarkup(btn_list)
     from_user_text = from_user.mention_markdown()
-    notif = msg.reply_text("{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息".format(from_user_text), reply_markup=markup, parse_mode="Markdown")
+    if real:
+        notif_text = "{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息\n **这将是一场生死对决**"
+    else:
+        notif_text = "{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息"
+    notif = msg.reply_text(notif_text.format(from_user_text), reply_markup=markup, parse_mode="Markdown")
 
     def duel_expire(bot, job):
         notif.edit_text("决斗邀请已过期")
 
     queue.run_once(duel_expire, 300)
+
+def real_duel(bot, update):
+    duel(bot, update, True)
     
-def handle_duel(bot, update):
+def handle_duel(bot, update, real = False):
     query = update.callback_query
     msg = query.message
     chat = msg.chat
@@ -1033,6 +1043,7 @@ def handle_duel(bot, update):
     duel_msg = chat.send_message("初始HP: \n100 {}\n100 {}".format(from_user_text,to_user_text), parse_mode="Markdown")
 
     round_time = 5
+    ban_time = "1m"
     def process_duel(bot, job):
         nonlocal from_user_hp, to_user_hp, rnd
         from_user_point = random.randrange(1, 101)
@@ -1052,14 +1063,21 @@ def handle_duel(bot, update):
         duel_msg.edit_text(rnd_text, parse_mode="Markdown")
         if from_user_hp <= 0:
             duel_msg.reply_text("{}被打败了，决斗结束".format(from_user.mention_markdown()), parse_mode="Markdown")
+            if real:
+                ban_user(bot, chat, from_user, ban_time)
             return
         if to_user_hp <= 0:
             duel_msg.reply_text("{}被打败了，决斗结束".format(to_user.mention_markdown()), parse_mode="Markdown")
+            if real:
+                ban_user(bot, chat, to_user, ban_time)
             return
         rnd += 1
         queue.run_once(process_duel, round_time)
         
     queue.run_once(process_duel, round_time)
+
+def handle_real_duel(bot, update):
+    handle_duel(bot, update, True)
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
@@ -1079,6 +1097,7 @@ updater.dispatcher.add_handler(CommandHandler("quote", quote))
 updater.dispatcher.add_handler(CommandHandler("lsquotes", lsquotes))
 updater.dispatcher.add_handler(CommandHandler("rmquote", rmquote, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("duel", duel))
+updater.dispatcher.add_handler(CommandHandler("real_duel", real_duel))
 updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_previous, pattern="lsquotes_previous"))
 updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_next, pattern="lsquotes_next"))
 updater.dispatcher.add_handler(CallbackQueryHandler(approve_quote, pattern=r"approve_quote:.*"))
@@ -1086,6 +1105,7 @@ updater.dispatcher.add_handler(CallbackQueryHandler(decline_quote, pattern=r"dec
 updater.dispatcher.add_handler(CallbackQueryHandler(approve_post, pattern=r"approve_post:.*"))
 updater.dispatcher.add_handler(CallbackQueryHandler(decline_post, pattern=r"decline_post:.*"))
 updater.dispatcher.add_handler(CallbackQueryHandler(handle_duel, pattern=r"duel:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(handle_real_duel, pattern=r"real_duel:.*"))
 updater.dispatcher.add_handler(
     CommandHandler("setsres", setsres, pass_args=True))
 updater.dispatcher.add_handler(
