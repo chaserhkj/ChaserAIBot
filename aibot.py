@@ -997,6 +997,9 @@ def duel(bot, update):
         return
     from_user = update.message.from_user
     to_user = msg.from_user
+    if to_user.is_bot:
+        update.message.reply_text("你的决斗被Bot的林肯法球挡下了")
+        return
     btn_list = [[telegram.InlineKeyboardButton("接受", callback_data="duel:{},{}".format(from_user.id,to_user.id))]]
     markup = telegram.InlineKeyboardMarkup(btn_list)
     from_user_text = from_user.mention_markdown()
