@@ -1014,21 +1014,22 @@ def handle_duel(bot, update):
     payload = query.data.split(":")[1]
     from_user_id = int(payload.split(",")[0])
     to_user_id = int(payload.split(",")[1])
-    if query.from_user.id != from_user_id:
+    if query.from_user.id != to_user_id:
         query.answer("没有找你决斗，别凑热闹啦", show_alert=True)
         return
 
     from_user = chat.get_member(from_user_id).user
     to_user = chat.get_member(to_user_id).user
-    from_user_text = from_user.mention_markdown()
-    to_user_text = to_user.mention_markdown()
+    from_user_text = from_user.full_name
+    to_user_text = to_user.full_name
     msg.edit_text("决斗开始:\n{}\nV.S.\n{}".format(from_user_text,to_user_text), parse_mode="Markdown")
 
     from_user_hp = 100
     to_user_hp = 100
     rnd = 1
-    chat.send_message("初始HP: \n100 {}\n100 {}".format(from_user_text,to_user_text), parse_mode="Markdown")
+    duel_msg = chat.send_message("初始HP: \n100 {}\n100 {}".format(from_user_text,to_user_text), parse_mode="Markdown")
 
+    round_time = 5
     def process_duel(bot, job):
         nonlocal from_user_hp, to_user_hp, rnd
         from_user_point = random.randrange(1, 101)
@@ -1045,17 +1046,17 @@ def handle_duel(bot, update):
             damage_text = "居然打平了！"
         hp_text = "现在HP: \n{} {}\n{} {}".format(from_user_hp, from_user_text, to_user_hp, to_user_text)
         rnd_text = "第{}轮：\n\n{}\n\n{}\n\n{}".format(rnd, roll_text, damage_text, hp_text)
-        chat.send_message(rnd_text, parse_mode="Markdown")
+        duel_msg.edit_text(rnd_text, parse_mode="Markdown")
         if from_user_hp <= 0:
-            chat.send_message("{}被打败了，决斗结束".format(from_user_text), parse_mode="Markdown")
+            chat.send_message("{}被打败了，决斗结束".format(from_user.mention_markdown()), parse_mode="Markdown")
             return
         if to_user_hp <= 0:
-            chat.send_message("{}被打败了，决斗结束".format(to_user_text), parse_mode="Markdown")
+            chat.send_message("{}被打败了，决斗结束".format(to_user.mention_markdown()), parse_mode="Markdown")
             return
         rnd += 1
-        queue.run_once(process_duel, 3)
+        queue.run_once(process_duel, round_time)
         
-    queue.run_once(process_duel, 3)
+    queue.run_once(process_duel, round_time)
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
