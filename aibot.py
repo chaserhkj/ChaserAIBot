@@ -995,7 +995,67 @@ def duel(bot, update):
             "用法：请使用此命令回复你想决斗的人"
         )
         return
+    from_user = update.message.from_user
+    to_user = msg.from_user
+    btn_list = [[telegram.InlineKeyboardButton("接受", callback_data="duel:{},{}".format(from_user.id,to_user.id))]]
+    markup = telegram.InlineKeyboardMarkup(btn_list)
+    from_user_text = from_user.mention_markdown()
+    notif = msg.reply_text("{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息".format(from_user_text), reply_markup=markup)
+
+    def duel_expire(bot, job):
+        notif.edit_text("决斗邀请已过期")
+
+    queue.run_once(duel_expire, 300)
+    
+def handle_duel(bot, update):
+    query = update.callback_query
+    msg = query.message
+    chat = msg.chat
+    payload = query.data.split(":")[1]
+    from_user_id = int(payload.split(",")[0])
+    to_user_id = int(payload.split(",")[1])
+    if query.from_user.id != from_user_id:
+        query.answer("没有找你决斗，别凑热闹啦", show_alert=True)
+        return
+
+    from_user = chat.get_member(from_user_id).user
+    to_user = chat.get_member(to_user_id).user
+    from_user_text = from_user.mention_markdown()
+    to_user_text = to_user.mention_markdown()
+    msg.edit_text("决斗开始:\n{}\nV.S.\n{}".format(from_user_text,to_user_text))
+
+    from_user_hp = 100
+    to_user_hp = 100
+    rnd = 1
+    chat.send_message("初始HP: \n100 {}\n100 {}".format(from_user_text,to_user_text))
+
+    def process_duel(bot, job):
+        nonlocal from_user_hp, to_user_hp, rnd
+        from_user_point = random.randrange(1, 101)
+        to_user_point = random.randrange(1, 101)
+        roll_text = "Roll 1D100:\n{} -> {}\n{} -> {}".format(from_user_text, from_user_point, to_user_text, to_user_point)
+        damage = from_user_point - to_user_point
+        if damage > 0:
+            damage_text = "{} 对 {} 造成了 {} 点伤害！".format(from_user_text, to_user_text, damage)
+            to_user_hp -= damage
+        elif damage < 0:
+            damage_text = "{} 对 {} 造成了 {} 点伤害！".format(to_user_text, from_user_text, -damage)
+            from_user_hp += damage
+        else:
+            damage_text = "居然打平了！"
+        hp_text = "现在HP: \n{} {}\n{} {}".format(from_user_hp, from_user_text, to_user_hp, to_user_text)
+        rnd_text = "第{}轮：\n\n{}\n\n{}\n\n{}".format(rnd, roll_text, damage_text, hp_text)
+        chat.send_message(rnd_text)
+        if from_user_hp <= 0:
+            chat.send_message("{}被打败了，决斗结束".format(from_user_text))
+            return
+        if to_user_hp <= 0:
+            chat.send_message("{}被打败了，决斗结束".format(to_user_text))
+            return
+        rnd += 1
+        queue.run_once(process_duel, 3)
         
+    queue.run_once(process_duel, 3)
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
