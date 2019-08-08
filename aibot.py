@@ -1002,9 +1002,11 @@ def duel(bot, update, real = False):
         update.message.reply_text("你的决斗被Bot的林肯法球挡下了")
         return
     if real:
-        btn_list = [[telegram.InlineKeyboardButton("接受", callback_data="real_duel:{},{}".format(from_user.id,to_user.id))]]
+        accept_btn = telegram.InlineKeyboardButton("接受", callback_data="real_duel:{},{}".format(from_user.id,to_user.id))
     else:
-        btn_list = [[telegram.InlineKeyboardButton("接受", callback_data="duel:{},{}".format(from_user.id,to_user.id))]]
+        accept_btn = telegram.InlineKeyboardButton("接受", callback_data="duel:{},{}".format(from_user.id,to_user.id))
+    decline_btn = telegram.InlineKeyboardButton("拒绝/取消", callback_data="decline_duel:{},{}".format(from_user.id, to_user.id))
+    btn_list = [[accept_btn, decline_btn]]
     markup = telegram.InlineKeyboardMarkup(btn_list)
     from_user_text = from_user.mention_markdown()
     if real:
@@ -1031,6 +1033,25 @@ def real_duel(bot, update):
         return
 
     duel(bot, update, True)
+
+def handle_decline_duel(bot, update):
+    query = update.callback_query
+    msg = query.message
+    chat = msg.chat
+    payload = query.data.split(":")[1]
+    from_user_id = int(payload.split(",")[0])
+    to_user_id = int(payload.split(",")[1])
+    from_user = chat.get_member(from_user_id).user
+    to_user = chat.get_member(to_user_id).user
+
+    if query.from_user.id == to_user_id:
+        msg.edit_text("{} 拒绝了决斗".format(to_user.mention_markdown()), parse_mode="Markdown")
+        return
+    if query.from_user.id == from_user_id:
+        msg.edit_text("{} 取消了决斗请求".format(from_user.mention_markdown()), parse_mode="Markdown")
+        return
+    query.answer("没有找你决斗，别凑热闹啦", show_alert=True)
+
     
 def handle_duel(bot, update, real = False):
     query = update.callback_query
@@ -1137,6 +1158,7 @@ updater.dispatcher.add_handler(CallbackQueryHandler(approve_post, pattern=r"appr
 updater.dispatcher.add_handler(CallbackQueryHandler(decline_post, pattern=r"decline_post:.*"))
 updater.dispatcher.add_handler(CallbackQueryHandler(handle_duel, pattern=r"duel:.*"))
 updater.dispatcher.add_handler(CallbackQueryHandler(handle_real_duel, pattern=r"real_duel:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(handle_decline_duel, pattern=r"decline_duel:.*"))
 updater.dispatcher.add_handler(
     CommandHandler("setsres", setsres, pass_args=True))
 updater.dispatcher.add_handler(
