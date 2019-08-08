@@ -38,6 +38,7 @@ from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, Regex
 from io import BytesIO
 from telegram import InputFile
 import pytimeparse
+import datetime
 import requests
 from pprint import pformat
 import json
@@ -1025,7 +1026,8 @@ def real_duel(bot, update):
     if gid not in real_duel_cd:
         real_duel_cd[gid] = {}
     if uid in real_duel_cd[gid]:
-        update.message.reply_text("此命令仍在冷却状态，你不能使用")
+        remaining = real_duel_cd[gid][uid].est_cd - datetime.datetime.now()
+        update.message.reply_text("此命令仍在冷却状态，你不能使用\n预计剩余冷却时间: {}".format(remaining))
         return
 
     duel(bot, update, True)
@@ -1055,7 +1057,9 @@ def handle_duel(bot, update, real = False):
     def remove_event(bot, job):
         del real_duel_cd[chat.id][from_user_id]
 
-    event = queue.run_once(remove_event, 43200)
+    cd_time = 43200
+    event = queue.run_once(remove_event, cd_time)
+    event.est_cd = datetime.datetime.now() + datetime.timedelta(seconds=cd_time)
     real_duel_cd[chat.id][from_user_id] = event
 
     from_user_text = from_user.full_name
@@ -1068,7 +1072,7 @@ def handle_duel(bot, update, real = False):
     duel_msg = chat.send_message("初始HP: \n100 {}\n100 {}".format(from_user_text,to_user_text), parse_mode="Markdown")
 
     round_time = 5
-    ban_time = "5m"
+    ban_time = "10m"
     def process_duel(bot, job):
         nonlocal from_user_hp, to_user_hp, rnd
         from_user_point = random.randrange(1, 101)
