@@ -1028,12 +1028,6 @@ def real_duel(bot, update):
         update.message.reply_text("此命令仍在冷却状态，你不能使用")
         return
 
-    def remove_event(bot, job):
-        del real_duel_cd[gid][uid]
-
-    event = queue.run_once(remove_event, 30)
-    real_duel_cd[gid][uid] = event
-
     duel(bot, update, True)
     
 def handle_duel(bot, update, real = False):
@@ -1043,12 +1037,27 @@ def handle_duel(bot, update, real = False):
     payload = query.data.split(":")[1]
     from_user_id = int(payload.split(",")[0])
     to_user_id = int(payload.split(",")[1])
+
+    if chat.id not in real_duel_cd:
+        real_duel_cd[chat.id] = {}
+    if from_user_id in real_duel_cd[chat.id]:
+        msg.edit_text("发起者的决斗处于冷却中，此项决斗无效")
+        return
+
     if query.from_user.id != to_user_id:
         query.answer("没有找你决斗，别凑热闹啦", show_alert=True)
         return
 
     from_user = chat.get_member(from_user_id).user
     to_user = chat.get_member(to_user_id).user
+
+
+    def remove_event(bot, job):
+        del real_duel_cd[chat.id][from_user_id]
+
+    event = queue.run_once(remove_event, 60)
+    real_duel_cd[chat.id][from_user_id] = event
+
     from_user_text = from_user.full_name
     to_user_text = to_user.full_name
     msg.edit_text("决斗开始:\n{}\nV.S.\n{}".format(from_user.mention_markdown(),to_user.mention_markdown()), parse_mode="Markdown")
