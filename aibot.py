@@ -1000,7 +1000,7 @@ def duel(bot, update):
     btn_list = [[telegram.InlineKeyboardButton("接受", callback_data="duel:{},{}".format(from_user.id,to_user.id))]]
     markup = telegram.InlineKeyboardMarkup(btn_list)
     from_user_text = from_user.mention_markdown()
-    notif = msg.reply_text("{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息".format(from_user_text), reply_markup=markup)
+    notif = msg.reply_text("{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息".format(from_user_text), reply_markup=markup, parse_mode="Markdown")
 
     def duel_expire(bot, job):
         notif.edit_text("决斗邀请已过期")
@@ -1022,12 +1022,12 @@ def handle_duel(bot, update):
     to_user = chat.get_member(to_user_id).user
     from_user_text = from_user.mention_markdown()
     to_user_text = to_user.mention_markdown()
-    msg.edit_text("决斗开始:\n{}\nV.S.\n{}".format(from_user_text,to_user_text))
+    msg.edit_text("决斗开始:\n{}\nV.S.\n{}".format(from_user_text,to_user_text), parse_mode="Markdown")
 
     from_user_hp = 100
     to_user_hp = 100
     rnd = 1
-    chat.send_message("初始HP: \n100 {}\n100 {}".format(from_user_text,to_user_text))
+    chat.send_message("初始HP: \n100 {}\n100 {}".format(from_user_text,to_user_text), parse_mode="Markdown")
 
     def process_duel(bot, job):
         nonlocal from_user_hp, to_user_hp, rnd
@@ -1045,12 +1045,12 @@ def handle_duel(bot, update):
             damage_text = "居然打平了！"
         hp_text = "现在HP: \n{} {}\n{} {}".format(from_user_hp, from_user_text, to_user_hp, to_user_text)
         rnd_text = "第{}轮：\n\n{}\n\n{}\n\n{}".format(rnd, roll_text, damage_text, hp_text)
-        chat.send_message(rnd_text)
+        chat.send_message(rnd_text, parse_mode="Markdown")
         if from_user_hp <= 0:
-            chat.send_message("{}被打败了，决斗结束".format(from_user_text))
+            chat.send_message("{}被打败了，决斗结束".format(from_user_text), parse_mode="Markdown")
             return
         if to_user_hp <= 0:
-            chat.send_message("{}被打败了，决斗结束".format(to_user_text))
+            chat.send_message("{}被打败了，决斗结束".format(to_user_text), parse_mode="Markdown")
             return
         rnd += 1
         queue.run_once(process_duel, 3)
@@ -1081,6 +1081,7 @@ updater.dispatcher.add_handler(CallbackQueryHandler(approve_quote, pattern=r"app
 updater.dispatcher.add_handler(CallbackQueryHandler(decline_quote, pattern=r"decline_quote:.*"))
 updater.dispatcher.add_handler(CallbackQueryHandler(approve_post, pattern=r"approve_post:.*"))
 updater.dispatcher.add_handler(CallbackQueryHandler(decline_post, pattern=r"decline_post:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(handle_duel, pattern=r"duel:.*"))
 updater.dispatcher.add_handler(
     CommandHandler("setsres", setsres, pass_args=True))
 updater.dispatcher.add_handler(
