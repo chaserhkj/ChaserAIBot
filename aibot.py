@@ -1022,7 +1022,7 @@ def handle_duel(bot, update):
     to_user = chat.get_member(to_user_id).user
     from_user_text = from_user.full_name
     to_user_text = to_user.full_name
-    msg.edit_text("决斗开始:\n{}\nV.S.\n{}".format(from_user_text,to_user_text), parse_mode="Markdown")
+    msg.edit_text("决斗开始:\n{}\nV.S.\n{}".format(from_user.mention_markdown(),to_user.mention_markdown()), parse_mode="Markdown")
 
     from_user_hp = 100
     to_user_hp = 100
@@ -1048,10 +1048,10 @@ def handle_duel(bot, update):
         rnd_text = "第{}轮：\n\n{}\n\n{}\n\n{}".format(rnd, roll_text, damage_text, hp_text)
         duel_msg.edit_text(rnd_text, parse_mode="Markdown")
         if from_user_hp <= 0:
-            chat.send_message("{}被打败了，决斗结束".format(from_user.mention_markdown()), parse_mode="Markdown")
+            duel_msg.reply_text("{}被打败了，决斗结束".format(from_user.mention_markdown()), parse_mode="Markdown")
             return
         if to_user_hp <= 0:
-            chat.send_message("{}被打败了，决斗结束".format(to_user.mention_markdown()), parse_mode="Markdown")
+            duel_msg.reply_text("{}被打败了，决斗结束".format(to_user.mention_markdown()), parse_mode="Markdown")
             return
         rnd += 1
         queue.run_once(process_duel, round_time)
