@@ -1040,11 +1040,12 @@ def handle_duel(bot, update, real = False):
     from_user_id = int(payload.split(",")[0])
     to_user_id = int(payload.split(",")[1])
 
-    if chat.id not in real_duel_cd:
-        real_duel_cd[chat.id] = {}
-    if from_user_id in real_duel_cd[chat.id]:
-        msg.edit_text("发起者的决斗处于冷却中，此项决斗无效")
-        return
+    if real:
+        if chat.id not in real_duel_cd:
+            real_duel_cd[chat.id] = {}
+        if from_user_id in real_duel_cd[chat.id]:
+            msg.edit_text("发起者的决斗处于冷却中，此项决斗无效")
+            return
 
     if query.from_user.id != to_user_id:
         query.answer("没有找你决斗，别凑热闹啦", show_alert=True)
@@ -1054,13 +1055,14 @@ def handle_duel(bot, update, real = False):
     to_user = chat.get_member(to_user_id).user
 
 
-    def remove_event(bot, job):
-        del real_duel_cd[chat.id][from_user_id]
+    if real:
+        def remove_event(bot, job):
+            del real_duel_cd[chat.id][from_user_id]
 
-    cd_time = 43200
-    event = queue.run_once(remove_event, cd_time)
-    event.est_cd = datetime.datetime.now() + datetime.timedelta(seconds=cd_time)
-    real_duel_cd[chat.id][from_user_id] = event
+        cd_time = 43200
+        event = queue.run_once(remove_event, cd_time)
+        event.est_cd = datetime.datetime.now() + datetime.timedelta(seconds=cd_time)
+        real_duel_cd[chat.id][from_user_id] = event
 
     from_user_text = from_user.full_name
     to_user_text = to_user.full_name
