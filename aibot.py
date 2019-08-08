@@ -1055,7 +1055,7 @@ def handle_duel(bot, update, real = False):
     def remove_event(bot, job):
         del real_duel_cd[chat.id][from_user_id]
 
-    event = queue.run_once(remove_event, 86400)
+    event = queue.run_once(remove_event, 43200)
     real_duel_cd[chat.id][from_user_id] = event
 
     from_user_text = from_user.full_name
