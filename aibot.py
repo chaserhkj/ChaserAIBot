@@ -714,9 +714,12 @@ def watch_count(gid, bot):
         old_member_count[gid] = count
     if count < old_member_count[gid]:
         chat = bot.get_chat(gid)
+        # Notify owner
         bot.send_message(owner, "{} member(s) have left group {}".format(old_member_count[gid] - count, chat.title))
+        # Notify group if set
         if count_watches[gid]["notify"]:
             bot.send_message(gid, "{} member(s) have left".format(old_member_count[gid] - count))
+        # Notify extra target if set
         notify_target = check_config(gid, "notify_watches_to")
         if notify_target:
             bot.send_message(notify_target, "{} member(s) have left group {}".format(old_member_count[gid] - count, chat.title))
@@ -743,14 +746,22 @@ def watch_member(gid, uid, bot):
         old_status[key] = status
     if status == 'left' and status != old_status[key]:
         chat = bot.get_chat(gid)
+        # Notify Owner
         bot.send_message(owner, "{} have left group {}".format(user.full_name, chat.title))
+        if member_watches[gid][uid]["message"]:
+            bot.send_message(owner, member_watches[gid][uid]["message"])
+        # Notify Group if set
         if member_watches[gid][uid]["notify"]:
             bot.send_message(gid, "{} have left".format(user.full_name))
             if member_watches[gid][uid]["message"]:
                 bot.send_message(gid, member_watches[gid][uid]["message"])
+        # Notify extra target if set
         notify_target = check_config(gid, "notify_watches_to")
         if notify_target:
             bot.send_message(notify_target, "{} have left group {}".format(user.full_name, chat.title))
+            if member_watches[gid][uid]["message"]:
+                bot.send_message(notify_target, member_watches[gid][uid]["message"])
+        # Kick if set
         if member_watches[gid][uid]["kick"]:
             bot.kick_chat_member(gid, member_watches[gid][uid]["kick"])
     old_status[key] = status
