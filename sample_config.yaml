@@ -8,6 +8,7 @@ groups:
         title_prefix: "BGM NA"
         title_reset_delay: 7200
         log_uid: True
+        notify_watches_to: -1 # Target ID to send watch notifications
 watches:
     count:
         -1001235265562:

@@ -717,6 +717,9 @@ def watch_count(gid, bot):
         bot.send_message(owner, "{} member(s) have left group {}".format(old_member_count[gid] - count, chat.title))
         if count_watches[gid]["notify"]:
             bot.send_message(gid, "{} member(s) have left".format(old_member_count[gid] - count))
+        notify_target = check_config(gid, "notify_watches_to")
+        if notify_target:
+            bot.send_message(notify_target, "{} member(s) have left group {}".format(old_member_count[gid] - count, chat.title))
     old_member_count[gid] = count
 
 def callback_poll_count(bot, job):
@@ -745,6 +748,9 @@ def watch_member(gid, uid, bot):
             bot.send_message(gid, "{} have left".format(user.full_name))
             if member_watches[gid][uid]["message"]:
                 bot.send_message(gid, member_watches[gid][uid]["message"])
+        notify_target = check_config(gid, "notify_watches_to")
+        if notify_target:
+            bot.send_message(notify_target, "{} have left group {}".format(user.full_name, chat.title))
         if member_watches[gid][uid]["kick"]:
             bot.kick_chat_member(gid, member_watches[gid][uid]["kick"])
     old_status[key] = status
