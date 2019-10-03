@@ -2,7 +2,7 @@ import yaml
 
 class AIConfig(object):
     '''Config class for AI Bot'''
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         '''Initializes the config class
 
             filename: str, path to the yaml config file
@@ -25,7 +25,7 @@ class AIConfig(object):
         '''Returns the telegram owner ID configured'''
         return self._owner
     
-    def group(self, group_id):
+    def group(self, group_id: int):
         '''Returns the configuration dictionary associated with `group_id`
         
             group_id: int, the telegram group id to query configuration for
