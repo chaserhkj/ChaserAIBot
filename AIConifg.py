@@ -27,8 +27,9 @@ class AIConfig(object):
     
     def group(self, group_id: int):
         '''Returns the configuration dictionary associated with `group_id`
+            Returns None if the configuration does not exist for the group
         
             group_id: int, the telegram group id to query configuration for
         '''
-        return self._config['groups'][group_id]
+        return self._config['groups'].get(group_id, None)
 
