@@ -3,13 +3,14 @@ from telethon import events
 from wrapt import decorator
 
 class GroupHandler(object):
-    ''' Decorator for wrapping async telethon NewMessage handlers as group message handlers
-        Making group configuration avaliable inside the handlers
+    ''' Decorator for producing async telethon NewMessage handlers from group message handlers
+        Making group id and group configuration avaliable inside the handlers
 
         Example Usage:
         @bot.on(events.NewMessage(...))
         @GroupHandler(ai_config)
         async def handler(event, gid, config):
+            # the handler would directly return None if message not coming from a configured group
             # gid would be the group id associated with the incoming message
             # config would be the group config associated with the group
     '''
