@@ -8,7 +8,7 @@ class AIConfig(object):
             filename: str, path to the yaml config file
         '''
         with open(filename, "r") as f:
-            self._config = yaml.load(f)
+            self._config = yaml.load(f, Loader=yaml.FullLoader)
         self._apikey = self._config['apikey']
         self._tenorkey = self._config['tenorkey']
         self._owner = self._config['owner']
