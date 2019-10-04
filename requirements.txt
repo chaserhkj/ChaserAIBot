@@ -3,3 +3,4 @@ PyYAML
 aiohttp
 telethon
 pyfakefs
+wrapt
