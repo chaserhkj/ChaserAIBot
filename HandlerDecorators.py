@@ -39,8 +39,5 @@ class GroupHandler(object):
         if g_config is None:
             return None
         
-        # Proxy call to inner method
-        if instance:
-            return await instance.f(event, gid, g_config)
-        # Proxy call to inner function
+        # Proxy call to inner function/method
         return await f(event, gid, g_config)
