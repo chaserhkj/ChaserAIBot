@@ -11,7 +11,7 @@ class GroupHandlerTest(TestCase):
         self.config = MagicMock(spec=AIConfig)
         self.config.group = MagicMock()
     
-    def test_not_group_message(self):
+    def test_not_group_message_returns_none(self):
         self.event.is_group = False
 
         @HandlerDecorators.GroupHandler(self.config)
@@ -23,7 +23,7 @@ class GroupHandlerTest(TestCase):
         self.assertIsNone(result)
         self.config.group.assert_not_called()
     
-    def test_no_group_config(self):
+    def test_no_group_config_returns_none(self):
         self.event.is_group = True
         self.event.chat_id = -1000
         self.config.group.return_value = None
@@ -37,7 +37,7 @@ class GroupHandlerTest(TestCase):
         self.assertIsNone(result)
         self.config.group.assert_called_with(-1000)
 
-    def test_group_message(self):
+    def test_group_message_calls_inner_handler(self):
         self.event.is_group = True
         self.event.chat_id = -1000
 
@@ -58,7 +58,7 @@ class GroupHandlerTest(TestCase):
         self.assertIs(result, self.result_object)
         self.config.group.assert_called_with(-1000)
     
-    def test_class_method(self):
+    def test_group_message_calls_inner_class_method_handler(self):
         self.event.is_group = True
         self.event.chat_id = -1000
 
