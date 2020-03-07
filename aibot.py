@@ -1113,6 +1113,19 @@ def handle_duel(bot, update, real = False):
 
     round_time = 5
     ban_time = "10m"
+
+    def generate_damage_text(from_user_text, to_user_text, damage):
+        abs_damage = abs(damage)
+        damage_distribute = [5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        skill_text = ['跃起', '瞪眼', '摇尾巴', '叫声', '王八拳', '掷泥', '飞弹针', '种子机关枪', '二连踢', '啄', '拍击', '抓', '撞击', '火花', '水枪', '电击', '泡沫', '细雪', '音速拳', '龙卷风', '碎岩', '真空波', '子弹拳', '冰砾', '水流喷射', '酸液炸弹', '妖精之风', '树叶', '藤鞭', '齿轮飞盘', '骨头回力镖', '充电光束', '居合斩', '金属爪', '空手劈', '念力', '剧毒牙', '毒尾', '蓄能焰袭', '飞叶快刀', '冰冻之风', '泥巴射击', '回旋踢', '冰息', '龙尾', '空气利刃', '岩石封锁', '翅膀攻击', '火焰轮', '龙息', '银色旋风', '水之波动', '雪崩', '烧尽', '重踏', '狂舞挥打', '高速星星', '暗影拳', '燕返', '魔法叶', '电击波', '磁铁炸弹', '泥巴炸弹', '雷电牙', '冰冻牙', '火焰牙', '幻象光线', '泡沫光线', '极光束', '污泥攻击', '电光', '拍落', '毒液冲击', '下盘踢', '钢翼', '头锤', '暗影爪', '十字毒刃', '冷冻干燥', '岩崩', '空气斩', '火焰拳', '冰冻拳', '雷电拳', '劈瓦', '信号光束', '魔法火焰', '地狱翻滚', '百万吨重拳', '旋风刀', '啄钻', '怪力', '挖洞', '攀瀑', '咬碎', '暗影球', '潜水', '龙爪', '毒击', '恶之波动', '种子炸弹', '十字剪', '加农光炮', '铁头', '热水', '魔法闪耀', '火焰鞭', '波导弹', '火焰踢', '冰柱坠击', '龙之波动', '猛撞', '攀岩', '喷射火焰', '冲浪', '冰冻光束', '十万伏特', '精神强念', '污泥炸弹', '巨声', '叶刃', '虫鸣', '能量球', '疯狂伏特', '花粉团', '热风', '十万马力', '月亮之力', '爆裂拳', '铁尾', '龙之俯冲', '熔岩风暴', '十字劈', '冰锤', '飞踢', '气旋攻击', '地震', '交错火焰', '交错闪电', '暴风雪', '打雷', '暴风', '水炮', '大字爆炎', '根源波动', '蒸汽爆炸', '电磁炮', '真气弹', '百万吨重踢', '舍身冲撞', '日光束', '逆鳞', '近身战', '勇鸟猛攻', '画龙点睛', '流星群', '飞叶风暴', '花朵加农炮', '冰冻伏特', '破灭之光', '破坏光线', '终极冲击', '大爆炸']
+        skill = random.choice(skill_text[sum(damage_distribute[0:abs_damage]):sum(damage_distribute[0:abs_damage]) + damage_distribute[abs_damage]])
+        if damage > 0:
+            return "{} 使用了{}，对 {} 造成了{}点伤害！".format(from_user_text, skill, to_user_text, abs_damage)
+        elif damage < 0:
+            return "{} 使用了{}，对 {} 造成了{}点伤害！".format(to_user_text, skill, from_user_text, abs_damage)
+        else:
+            return "{} 和 {} 互相使用了{}，什么事都没有发生！".format(from_user_text, to_user_text, skill)
+
     def process_duel(bot, job):
         nonlocal from_user_hp, to_user_hp, rnd
         from_user_point = random.randrange(1, 101)
@@ -1120,13 +1133,10 @@ def handle_duel(bot, update, real = False):
         roll_text = "Roll 1D100:\n{} -> {}\n{} -> {}".format(from_user_text, from_user_point, to_user_text, to_user_point)
         damage = from_user_point - to_user_point
         if damage > 0:
-            damage_text = "{} 对 {} 造成了 {} 点伤害！".format(from_user_text, to_user_text, damage)
             to_user_hp -= damage
         elif damage < 0:
-            damage_text = "{} 对 {} 造成了 {} 点伤害！".format(to_user_text, from_user_text, -damage)
             from_user_hp += damage
-        else:
-            damage_text = "居然打平了！"
+        damage_text = generate_damage_text(from_user_text, to_user_text, damage)
         hp_text = "现在HP: \n{} {}\n{} {}".format(from_user_hp, from_user_text, to_user_hp, to_user_text)
         rnd_text = "第{}轮：\n\n{}\n\n{}\n\n{}".format(rnd, roll_text, damage_text, hp_text)
         duel_msg.edit_text(rnd_text, parse_mode="Markdown")
