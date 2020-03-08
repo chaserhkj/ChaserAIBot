@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 
+import os
+import yaml
+from wallstreet import Stock
+import random
+import shelve
+import json
+from pprint import pformat
+import requests
+import datetime
+import pytimeparse
+from telegram import InputFile
+from io import BytesIO
+from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, RegexHandler, CallbackQueryHandler
+import telegram
 import logging
 logging.basicConfig(
     level=logging.DEBUG,
@@ -27,27 +41,16 @@ def logged(func):
 config_path = "config.yaml"
 action_path = "actions.yaml"
 config = {}
-import yaml, os
 with open(config_path, "r") as f:
     config = yaml.load(f)
 with open(action_path, "r") as f:
     actions = yaml.load(f)["actions"]
 tg_key = config["apikey"]
-import telegram
-from telegram.ext import Updater, CommandHandler, Filters, MessageHandler, RegexHandler, CallbackQueryHandler
-from io import BytesIO
-from telegram import InputFile
-import pytimeparse
-import datetime
-import requests
-from pprint import pformat
-import json
 tenorkey = config["tenorkey"]
 res = requests.get("https://api.tenor.com/v1/anonid", params={"key": tenorkey})
 anonid = res.json()["anon_id"]
 updater = Updater(tg_key, workers=16)
 queue = updater.job_queue
-import shelve
 db = shelve.open("data.db")
 if not "sticker_response" in db:
     db["sticker_response"] = {}
@@ -57,8 +60,6 @@ if not "user_ids" in db:
     db["user_ids"] = {}
 if not "quotes" in db:
     db["quotes"] = {}
-import random
-from wallstreet import Stock
 
 group_config = config["groups"]
 reset_events = {}
@@ -71,7 +72,6 @@ response_cd = set()
 quote_moderator = [owner]
 if "quote_moderator" in config:
     quote_moderator.extend(config["quote_moderator"])
-
 
 
 def check_owner(func):
@@ -100,6 +100,7 @@ def check_restrict(func):
             func(*arg, **argd)
 
     return new_func
+
 
 def check_admin(func):
     def new_func(*arg, **argd):
@@ -344,6 +345,7 @@ def ban(bot, update, args):
         ban_time = args[0]
     ban_user(bot, update.message.chat, msg.from_user, ban_time)
 
+
 def ban_user(bot, chat, user, ban_time=None):
     member = chat.get_member(user.id)
     if member.status == 'creator' or member.status == 'administrator':
@@ -362,7 +364,7 @@ def ban_user(bot, chat, user, ban_time=None):
         can_add_web_page_previews=False,
         timeout=10)
     chat.send_message("{} 跟我乖乖到小黑屋里走一趟吧, 刑期: {}".format(user.mention_markdown(), "无限" if ban_time == None else ban_time),
-        parse_mode="Markdown")
+                      parse_mode="Markdown")
     chat.send_sticker(sticker="CAADBQADJwIAAgsiPA7OflnL6kErDgI")
     if ban_time == None:
         return
@@ -498,7 +500,7 @@ def unban(bot, update):
 @logged
 def list_cmd(bot, update):
     help_txt = \
-"""List of non-action commands:
+        """List of non-action commands:
 /start     : Grant permission for individual user
 /getgid    : Show GID of current group chat
 /getsid    : Show id of sticker
@@ -691,6 +693,7 @@ def shows(bot, update, args):
         return
     update.message.reply_sticker(args[0])
 
+
 @logged
 def stock(bot, update, args):
     if len(args) < 1:
@@ -700,10 +703,13 @@ def stock(bot, update, args):
     stk = Stock(ticker, source="yahoo")
     name = stk.name
     name = name.replace("&amp;", "&")
-    update.message.reply_text("{}({}) 最近交易价格为{:.2f}, 最近交易日变动{:.2f}({:.1f}%)".format(name, stk.ticker, stk.price, stk.change, stk.cp))
+    update.message.reply_text("{}({}) 最近交易价格为{:.2f}, 最近交易日变动{:.2f}({:.1f}%)".format(
+        name, stk.ticker, stk.price, stk.change, stk.cp))
+
 
 count_watches = config["watches"]["count"]
 old_member_count = {}
+
 
 def watch_count(gid, bot):
     try:
@@ -715,22 +721,28 @@ def watch_count(gid, bot):
     if count < old_member_count[gid]:
         chat = bot.get_chat(gid)
         # Notify owner
-        bot.send_message(owner, "{} member(s) have left group {}".format(old_member_count[gid] - count, chat.title))
+        bot.send_message(owner, "{} member(s) have left group {}".format(
+            old_member_count[gid] - count, chat.title))
         # Notify group if set
         if count_watches[gid]["notify"]:
-            bot.send_message(gid, "{} member(s) have left".format(old_member_count[gid] - count))
+            bot.send_message(gid, "{} member(s) have left".format(
+                old_member_count[gid] - count))
         # Notify extra target if set
         notify_target = check_config(gid, "notify_watches_to")
         if notify_target:
-            bot.send_message(notify_target, "{} member(s) have left group {}".format(old_member_count[gid] - count, chat.title))
+            bot.send_message(notify_target, "{} member(s) have left group {}".format(
+                old_member_count[gid] - count, chat.title))
     old_member_count[gid] = count
+
 
 def callback_poll_count(bot, job):
     for gid in count_watches:
         watch_count(gid, bot)
 
+
 member_watches = config["watches"]["member"]
 old_status = {}
+
 
 def watch_member(gid, uid, bot):
     key = "{}_{}".format(gid, uid)
@@ -747,7 +759,8 @@ def watch_member(gid, uid, bot):
     if status == 'left' and status != old_status[key]:
         chat = bot.get_chat(gid)
         # Notify Owner
-        bot.send_message(owner, "{} have left group {}".format(user.full_name, chat.title))
+        bot.send_message(owner, "{} have left group {}".format(
+            user.full_name, chat.title))
         if member_watches[gid][uid]["message"]:
             bot.send_message(owner, member_watches[gid][uid]["message"])
         # Notify Group if set
@@ -758,18 +771,22 @@ def watch_member(gid, uid, bot):
         # Notify extra target if set
         notify_target = check_config(gid, "notify_watches_to")
         if notify_target:
-            bot.send_message(notify_target, "{} have left group {}".format(user.full_name, chat.title))
+            bot.send_message(notify_target, "{} have left group {}".format(
+                user.full_name, chat.title))
             if member_watches[gid][uid]["message"]:
-                bot.send_message(notify_target, member_watches[gid][uid]["message"])
+                bot.send_message(
+                    notify_target, member_watches[gid][uid]["message"])
         # Kick if set
         if member_watches[gid][uid]["kick"]:
             bot.kick_chat_member(gid, member_watches[gid][uid]["kick"])
     old_status[key] = status
-    
+
+
 def callback_poll_member(bot, job):
     for gid in member_watches:
         for uid in member_watches[gid]:
             watch_member(gid, uid, bot)
+
 
 def log_user_id(bot, update):
     gid = update.message.chat.id
@@ -781,7 +798,9 @@ def log_user_id(bot, update):
         db["user_ids"] = uid_dict
         db.sync()
 
+
 pending_posts = {}
+
 
 @logged
 def postit(bot, update):
@@ -799,28 +818,34 @@ def postit(bot, update):
         update.message.reply_text("No channel configured for this group")
         return
     msg.post_key = key
-    content = "Pending Post From {}\nID:{}\n{}By {}:\n{}".format(update.message.chat.title, msg.post_key, get_quote_link(msg.post_key),msg.from_user.full_name, msg.text or "[No Text Present]")
-    appr_btn_list = [[telegram.InlineKeyboardButton("Approve", callback_data="approve_post:{}".format(key))], [telegram.InlineKeyboardButton("Decline", callback_data="decline_post:{}".format(key))]]
+    content = "Pending Post From {}\nID:{}\n{}By {}:\n{}".format(update.message.chat.title, msg.post_key, get_quote_link(
+        msg.post_key), msg.from_user.full_name, msg.text or "[No Text Present]")
+    appr_btn_list = [[telegram.InlineKeyboardButton("Approve", callback_data="approve_post:{}".format(
+        key))], [telegram.InlineKeyboardButton("Decline", callback_data="decline_post:{}".format(key))]]
     appr_markup = telegram.InlineKeyboardMarkup(appr_btn_list)
     admins = bot.get_chat_administrators(chan_id)
     for member in admins:
         if not member.user.is_bot:
             try:
-                bot.send_message(member.user.id, content, reply_markup=appr_markup)
+                bot.send_message(member.user.id, content,
+                                 reply_markup=appr_markup)
             except telegram.error.Unauthorized:
                 continue
     msg.prompt = update.message.reply_text("Post pending approval.")
     pending_posts[key] = msg
 
+
 pending_quote = {}
+
 
 def get_quote_link(q_id):
     if not q_id.startswith("-100"):
-        return "" 
+        return ""
     q_id = q_id.split("_")
     gid = q_id[0][4:]
     mid = q_id[1]
     return "t.me/c/{}/{}\n".format(gid, mid)
+
 
 @logged
 def addquote(bot, update):
@@ -838,8 +863,10 @@ def addquote(bot, update):
         update.message.reply_text("Quote already waiting for approval")
         return
     msg.quote_key = key
-    content = "Pending Quote\nID:{}\n{}By {}:\n{}".format(msg.quote_key, get_quote_link(msg.quote_key),msg.from_user.full_name, msg.text or "[No Text Present]")
-    appr_btn_list = [[telegram.InlineKeyboardButton("Approve", callback_data="approve_quote:{}".format(key))], [telegram.InlineKeyboardButton("Decline", callback_data="decline_quote:{}".format(key))]]
+    content = "Pending Quote\nID:{}\n{}By {}:\n{}".format(msg.quote_key, get_quote_link(
+        msg.quote_key), msg.from_user.full_name, msg.text or "[No Text Present]")
+    appr_btn_list = [[telegram.InlineKeyboardButton("Approve", callback_data="approve_quote:{}".format(
+        key))], [telegram.InlineKeyboardButton("Decline", callback_data="decline_quote:{}".format(key))]]
     appr_markup = telegram.InlineKeyboardMarkup(appr_btn_list)
     for uid in quote_moderator:
         bot.send_message(uid, content, reply_markup=appr_markup)
@@ -849,18 +876,24 @@ def addquote(bot, update):
 
 ls_quote_sessions = {}
 
+
 def fmt_quotes(session):
     i = session['i']
     j = i + session['di']
-    header = "Quotes {}-{}, total {}\n\n".format(i + 1, j, len(session["data"]))
+    header = "Quotes {}-{}, total {}\n\n".format(
+        i + 1, j, len(session["data"]))
     quotes = [session['data'][key] for key in session['keys'][i:j]]
     output = []
     for quote in quotes:
-        output.append("ID:{}\n{}By {}:\n{}".format(quote.quote_key, get_quote_link(quote.quote_key),quote.from_user.full_name, quote.text or "[No Text Present]"))
+        output.append("ID:{}\n{}By {}:\n{}".format(quote.quote_key, get_quote_link(
+            quote.quote_key), quote.from_user.full_name, quote.text or "[No Text Present]"))
     return header + "\n\n".join(output)
 
-btn_list = [[telegram.InlineKeyboardButton("Previous Page", callback_data="lsquotes_previous")], [telegram.InlineKeyboardButton("Next Page", callback_data="lsquotes_next")]]
+
+btn_list = [[telegram.InlineKeyboardButton("Previous Page", callback_data="lsquotes_previous")], [
+    telegram.InlineKeyboardButton("Next Page", callback_data="lsquotes_next")]]
 markup = telegram.InlineKeyboardMarkup(btn_list)
+
 
 @check_owner
 @logged
@@ -876,10 +909,11 @@ def lsquotes(bot, update):
     if len(session['data']) == 0:
         msg.reply_text("No quotes found")
         return
-    session['msg'] = msg.reply_text(fmt_quotes(session), reply_markup = markup)
+    session['msg'] = msg.reply_text(fmt_quotes(session), reply_markup=markup)
     if len(ls_quote_sessions) >= 10:
         ls_quote_sessions = {}
     ls_quote_sessions[key] = session
+
 
 def lsquotes_previous(bot, update):
     global ls_quote_sessions
@@ -887,14 +921,15 @@ def lsquotes_previous(bot, update):
     msg = query.message
     session_key = "{}".format(msg.chat.id)
     if session_key not in ls_quote_sessions:
-        msg.edit_text("Session not found, maybe expired, please /lsquotes again to start a new one.")
+        msg.edit_text(
+            "Session not found, maybe expired, please /lsquotes again to start a new one.")
         return
     session = ls_quote_sessions[session_key]
     i = session['i'] - session['di']
     if i < 0:
         return
     session['i'] = i
-    msg.edit_text(fmt_quotes(session), reply_markup = markup)
+    msg.edit_text(fmt_quotes(session), reply_markup=markup)
 
 
 def lsquotes_next(bot, update):
@@ -903,21 +938,24 @@ def lsquotes_next(bot, update):
     msg = query.message
     session_key = "{}".format(msg.chat.id)
     if session_key not in ls_quote_sessions:
-        msg.edit_text("Session not found, maybe expired, please /lsquotes again to start a new one.")
+        msg.edit_text(
+            "Session not found, maybe expired, please /lsquotes again to start a new one.")
         return
     session = ls_quote_sessions[session_key]
     i = session['i'] + session['di']
     if i >= len(session['data']):
         return
     session['i'] = i
-    msg.edit_text(fmt_quotes(session), reply_markup = markup)
+    msg.edit_text(fmt_quotes(session), reply_markup=markup)
+
 
 def approve_quote(bot, update):
     query = update.callback_query
     msg = query.message
     pending_id = query.data.split(":")[1]
     if pending_id not in pending_quote:
-        msg.edit_text("Pending quote not found, maybe already processed by another moderator")
+        msg.edit_text(
+            "Pending quote not found, maybe already processed by another moderator")
         return
     quote = pending_quote[pending_id]
     quotes = db["quotes"]
@@ -928,17 +966,20 @@ def approve_quote(bot, update):
     quote.prompt.edit_text("Approved")
     msg.edit_text("{}\n\nApproved".format(msg.text))
 
+
 def decline_quote(bot, update):
     query = update.callback_query
     msg = query.message
     pending_id = query.data.split(":")[1]
     if pending_id not in pending_quote:
-        msg.edit_text("Pending quote not found, maybe already processed by another moderator")
+        msg.edit_text(
+            "Pending quote not found, maybe already processed by another moderator")
         return
     quote = pending_quote[pending_id]
     del pending_quote[pending_id]
     quote.prompt.edit_text("Declined")
     msg.edit_text("{}\n\nDeclined".format(msg.text))
+
 
 def approve_post(bot, update):
     query = update.callback_query
@@ -950,7 +991,8 @@ def approve_post(bot, update):
         msg.edit_text("Channel not configured, something terrible happened")
         return
     if pending_id not in pending_posts:
-        msg.edit_text("Pending post not found, maybe already processed by another moderator")
+        msg.edit_text(
+            "Pending post not found, maybe already processed by another moderator")
         return
     post = pending_posts[pending_id]
     bot.forward_message(chan_id, post.chat.id, post.message_id)
@@ -958,17 +1000,20 @@ def approve_post(bot, update):
     post.prompt.edit_text("Approved")
     msg.edit_text("{}\n\nApproved".format(msg.text))
 
+
 def decline_post(bot, update):
     query = update.callback_query
     msg = query.message
     pending_id = query.data.split(":")[1]
     if pending_id not in pending_posts:
-        msg.edit_text("Pending post not found, maybe already processed by another moderator")
+        msg.edit_text(
+            "Pending post not found, maybe already processed by another moderator")
         return
     post = pending_posts[pending_id]
     del pending_posts[pending_id]
     post.prompt.edit_text("Declined")
     msg.edit_text("{}\n\nDeclined".format(msg.text))
+
 
 @check_owner
 @logged
@@ -985,6 +1030,7 @@ def rmquote(bot, update, args):
     db["quotes"] = q_dict
     db.sync()
     update.message.reply_text("Quote removed")
+
 
 @logged
 def quote(bot, update):
@@ -1006,7 +1052,8 @@ def quote(bot, update):
             db["quotes"] = q_dict
             db.sync()
 
-def duel(bot, update, real = False):
+
+def duel(bot, update, real=False):
     msg = update.message.reply_to_message
     if msg == None:
         update.message.reply_text(
@@ -1019,10 +1066,13 @@ def duel(bot, update, real = False):
         update.message.reply_text("你的决斗被Bot的林肯法球挡下了")
         return
     if real:
-        accept_btn = telegram.InlineKeyboardButton("接受", callback_data="real_duel:{},{}".format(from_user.id,to_user.id))
+        accept_btn = telegram.InlineKeyboardButton(
+            "接受", callback_data="real_duel:{},{}".format(from_user.id, to_user.id))
     else:
-        accept_btn = telegram.InlineKeyboardButton("接受", callback_data="duel:{},{}".format(from_user.id,to_user.id))
-    decline_btn = telegram.InlineKeyboardButton("拒绝/取消", callback_data="decline_duel:{},{}".format(from_user.id, to_user.id))
+        accept_btn = telegram.InlineKeyboardButton(
+            "接受", callback_data="duel:{},{}".format(from_user.id, to_user.id))
+    decline_btn = telegram.InlineKeyboardButton(
+        "拒绝/取消", callback_data="decline_duel:{},{}".format(from_user.id, to_user.id))
     btn_list = [[accept_btn, decline_btn]]
     markup = telegram.InlineKeyboardMarkup(btn_list)
     from_user_text = from_user.mention_markdown()
@@ -1030,26 +1080,32 @@ def duel(bot, update, real = False):
         notif_text = "{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息\n **这将是一场生死对决**"
     else:
         notif_text = "{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息"
-    notif = msg.reply_text(notif_text.format(from_user_text), reply_markup=markup, parse_mode="Markdown")
+    notif = msg.reply_text(notif_text.format(
+        from_user_text), reply_markup=markup, parse_mode="Markdown")
 
     def duel_expire(bot, job):
         notif.edit_text("决斗邀请已过期")
 
     queue.run_once(duel_expire, 300)
 
+
 real_duel_cd = {}
+
+
 def real_duel(bot, update):
-    global real_duel_cd 
+    global real_duel_cd
     gid = update.message.chat.id
     uid = update.message.from_user.id
     if gid not in real_duel_cd:
         real_duel_cd[gid] = {}
     if uid in real_duel_cd[gid]:
         remaining = real_duel_cd[gid][uid].est_cd - datetime.datetime.now()
-        update.message.reply_text("此命令仍在冷却状态，你不能使用\n预计剩余冷却时间: {}".format(remaining))
+        update.message.reply_text(
+            "此命令仍在冷却状态，你不能使用\n预计剩余冷却时间: {}".format(remaining))
         return
 
     duel(bot, update, True)
+
 
 def handle_decline_duel(bot, update):
     query = update.callback_query
@@ -1062,15 +1118,17 @@ def handle_decline_duel(bot, update):
     to_user = chat.get_member(to_user_id).user
 
     if query.from_user.id == to_user_id:
-        msg.edit_text("{} 拒绝了决斗".format(to_user.mention_markdown()), parse_mode="Markdown")
+        msg.edit_text("{} 拒绝了决斗".format(
+            to_user.mention_markdown()), parse_mode="Markdown")
         return
     if query.from_user.id == from_user_id:
-        msg.edit_text("{} 取消了决斗请求".format(from_user.mention_markdown()), parse_mode="Markdown")
+        msg.edit_text("{} 取消了决斗请求".format(
+            from_user.mention_markdown()), parse_mode="Markdown")
         return
     query.answer("没有找你决斗，别凑热闹啦", show_alert=True)
 
-    
-def handle_duel(bot, update, real = False):
+
+def handle_duel(bot, update, real=False):
     query = update.callback_query
     msg = query.message
     chat = msg.chat
@@ -1092,7 +1150,6 @@ def handle_duel(bot, update, real = False):
     from_user = chat.get_member(from_user_id).user
     to_user = chat.get_member(to_user_id).user
 
-
     if real:
         def remove_event(bot, job):
             del real_duel_cd[chat.id][from_user_id]
@@ -1104,21 +1161,26 @@ def handle_duel(bot, update, real = False):
 
     from_user_text = from_user.full_name
     to_user_text = to_user.full_name
-    msg.edit_text("决斗开始:\n{}\nV.S.\n{}".format(from_user.mention_markdown(),to_user.mention_markdown()), parse_mode="Markdown")
+    msg.edit_text("决斗开始:\n{}\nV.S.\n{}".format(
+        from_user.mention_markdown(), to_user.mention_markdown()), parse_mode="Markdown")
 
     from_user_hp = 100
     to_user_hp = 100
     rnd = 1
-    duel_msg = chat.send_message("初始HP: \n100 {}\n100 {}".format(from_user_text,to_user_text), parse_mode="Markdown")
+    duel_msg = chat.send_message("初始HP: \n100 {}\n100 {}".format(
+        from_user_text, to_user_text), parse_mode="Markdown")
 
     round_time = 5
     ban_time = "10m"
 
     def generate_damage_text(from_user_text, to_user_text, damage):
         abs_damage = abs(damage)
-        damage_distribute = [5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        skill_text = ['跃起', '瞪眼', '摇尾巴', '叫声', '王八拳', '掷泥', '飞弹针', '种子机关枪', '二连踢', '啄', '拍击', '抓', '撞击', '火花', '水枪', '电击', '泡沫', '细雪', '音速拳', '龙卷风', '碎岩', '真空波', '子弹拳', '冰砾', '水流喷射', '酸液炸弹', '妖精之风', '树叶', '藤鞭', '齿轮飞盘', '骨头回力镖', '充电光束', '居合斩', '金属爪', '空手劈', '念力', '剧毒牙', '毒尾', '蓄能焰袭', '飞叶快刀', '冰冻之风', '泥巴射击', '回旋踢', '冰息', '龙尾', '空气利刃', '岩石封锁', '翅膀攻击', '火焰轮', '龙息', '银色旋风', '水之波动', '雪崩', '烧尽', '重踏', '狂舞挥打', '高速星星', '暗影拳', '燕返', '魔法叶', '电击波', '磁铁炸弹', '泥巴炸弹', '雷电牙', '冰冻牙', '火焰牙', '幻象光线', '泡沫光线', '极光束', '污泥攻击', '电光', '拍落', '毒液冲击', '下盘踢', '钢翼', '头锤', '暗影爪', '十字毒刃', '冷冻干燥', '岩崩', '空气斩', '火焰拳', '冰冻拳', '雷电拳', '劈瓦', '信号光束', '魔法火焰', '地狱翻滚', '百万吨重拳', '旋风刀', '啄钻', '怪力', '挖洞', '攀瀑', '咬碎', '暗影球', '潜水', '龙爪', '毒击', '恶之波动', '种子炸弹', '十字剪', '加农光炮', '铁头', '热水', '魔法闪耀', '火焰鞭', '波导弹', '火焰踢', '冰柱坠击', '龙之波动', '猛撞', '攀岩', '喷射火焰', '冲浪', '冰冻光束', '十万伏特', '精神强念', '污泥炸弹', '巨声', '叶刃', '虫鸣', '能量球', '疯狂伏特', '花粉团', '热风', '十万马力', '月亮之力', '爆裂拳', '铁尾', '龙之俯冲', '熔岩风暴', '十字劈', '冰锤', '飞踢', '气旋攻击', '地震', '交错火焰', '交错闪电', '暴风雪', '打雷', '暴风', '水炮', '大字爆炎', '根源波动', '蒸汽爆炸', '电磁炮', '真气弹', '百万吨重踢', '舍身冲撞', '日光束', '逆鳞', '近身战', '勇鸟猛攻', '画龙点睛', '流星群', '飞叶风暴', '花朵加农炮', '冰冻伏特', '破灭之光', '破坏光线', '终极冲击', '大爆炸']
-        skill = random.choice(skill_text[sum(damage_distribute[0:abs_damage]):sum(damage_distribute[0:abs_damage]) + damage_distribute[abs_damage]])
+        damage_distribute = [5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        skill_text = ['跃起', '瞪眼', '摇尾巴', '叫声', '王八拳', '掷泥', '飞弹针', '种子机关枪', '二连踢', '啄', '拍击', '抓', '撞击', '火花', '水枪', '电击', '泡沫', '细雪', '音速拳', '龙卷风', '碎岩', '真空波', '子弹拳', '冰砾', '水流喷射', '酸液炸弹', '妖精之风', '树叶', '藤鞭', '齿轮飞盘', '骨头回力镖', '充电光束', '居合斩', '金属爪', '空手劈', '念力', '剧毒牙', '毒尾', '蓄能焰袭', '飞叶快刀', '冰冻之风', '泥巴射击', '回旋踢', '冰息', '龙尾', '空气利刃', '岩石封锁', '翅膀攻击', '火焰轮', '龙息', '银色旋风', '水之波动', '雪崩', '烧尽', '重踏', '狂舞挥打', '高速星星', '暗影拳', '燕返', '魔法叶', '电击波', '磁铁炸弹', '泥巴炸弹', '雷电牙', '冰冻牙', '火焰牙', '幻象光线', '泡沫光线', '极光束', '污泥攻击', '电光', '拍落', '毒液冲击', '下盘踢', '钢翼', '头锤', '暗影爪', '十字毒刃', '冷冻干燥', '岩崩', '空气斩', '火焰拳',
+                      '冰冻拳', '雷电拳', '劈瓦', '信号光束', '魔法火焰', '地狱翻滚', '百万吨重拳', '旋风刀', '啄钻', '怪力', '挖洞', '攀瀑', '咬碎', '暗影球', '潜水', '龙爪', '毒击', '恶之波动', '种子炸弹', '十字剪', '加农光炮', '铁头', '热水', '魔法闪耀', '火焰鞭', '波导弹', '火焰踢', '冰柱坠击', '龙之波动', '猛撞', '攀岩', '喷射火焰', '冲浪', '冰冻光束', '十万伏特', '精神强念', '污泥炸弹', '巨声', '叶刃', '虫鸣', '能量球', '疯狂伏特', '花粉团', '热风', '十万马力', '月亮之力', '爆裂拳', '铁尾', '龙之俯冲', '熔岩风暴', '十字劈', '冰锤', '飞踢', '气旋攻击', '地震', '交错火焰', '交错闪电', '暴风雪', '打雷', '暴风', '水炮', '大字爆炎', '根源波动', '蒸汽爆炸', '电磁炮', '真气弹', '百万吨重踢', '舍身冲撞', '日光束', '逆鳞', '近身战', '勇鸟猛攻', '画龙点睛', '流星群', '飞叶风暴', '花朵加农炮', '冰冻伏特', '破灭之光', '破坏光线', '终极冲击', '大爆炸']
+        skill = random.choice(skill_text[sum(damage_distribute[0:abs_damage]):sum(
+            damage_distribute[0:abs_damage]) + damage_distribute[abs_damage]])
         if damage > 0:
             return "{} 使用了{}，对 {} 造成了{}点伤害！".format(from_user_text, skill, to_user_text, abs_damage)
         elif damage < 0:
@@ -1130,33 +1192,41 @@ def handle_duel(bot, update, real = False):
         nonlocal from_user_hp, to_user_hp, rnd
         from_user_point = random.randrange(1, 101)
         to_user_point = random.randrange(1, 101)
-        roll_text = "Roll 1D100:\n{} -> {}\n{} -> {}".format(from_user_text, from_user_point, to_user_text, to_user_point)
+        roll_text = "Roll 1D100:\n{} -> {}\n{} -> {}".format(
+            from_user_text, from_user_point, to_user_text, to_user_point)
         damage = from_user_point - to_user_point
         if damage > 0:
             to_user_hp -= damage
         elif damage < 0:
             from_user_hp += damage
-        damage_text = generate_damage_text(from_user_text, to_user_text, damage)
-        hp_text = "现在HP: \n{} {}\n{} {}".format(from_user_hp, from_user_text, to_user_hp, to_user_text)
-        rnd_text = "第{}轮：\n\n{}\n\n{}\n\n{}".format(rnd, roll_text, damage_text, hp_text)
+        damage_text = generate_damage_text(
+            from_user_text, to_user_text, damage)
+        hp_text = "现在HP: \n{} {}\n{} {}".format(
+            from_user_hp, from_user_text, to_user_hp, to_user_text)
+        rnd_text = "第{}轮：\n\n{}\n\n{}\n\n{}".format(
+            rnd, roll_text, damage_text, hp_text)
         duel_msg.edit_text(rnd_text, parse_mode="Markdown")
         if from_user_hp <= 0:
-            duel_msg.reply_text("{}被打败了，决斗结束".format(from_user.mention_markdown()), parse_mode="Markdown")
+            duel_msg.reply_text("{}被打败了，决斗结束".format(
+                from_user.mention_markdown()), parse_mode="Markdown")
             if real:
                 ban_user(bot, chat, from_user, ban_time)
             return
         if to_user_hp <= 0:
-            duel_msg.reply_text("{}被打败了，决斗结束".format(to_user.mention_markdown()), parse_mode="Markdown")
+            duel_msg.reply_text("{}被打败了，决斗结束".format(
+                to_user.mention_markdown()), parse_mode="Markdown")
             if real:
                 ban_user(bot, chat, to_user, ban_time)
             return
         rnd += 1
         queue.run_once(process_duel, round_time)
-        
+
     queue.run_once(process_duel, round_time)
+
 
 def handle_real_duel(bot, update):
     handle_duel(bot, update, True)
+
 
 updater.dispatcher.add_handler(CommandHandler("start", start))
 updater.dispatcher.add_handler(CommandHandler("getgid", getgid))
@@ -1174,18 +1244,28 @@ updater.dispatcher.add_handler(CommandHandler("postit", postit))
 updater.dispatcher.add_handler(CommandHandler("addquote", addquote))
 updater.dispatcher.add_handler(CommandHandler("quote", quote))
 updater.dispatcher.add_handler(CommandHandler("lsquotes", lsquotes))
-updater.dispatcher.add_handler(CommandHandler("rmquote", rmquote, pass_args=True))
+updater.dispatcher.add_handler(
+    CommandHandler("rmquote", rmquote, pass_args=True))
 updater.dispatcher.add_handler(CommandHandler("duel", duel))
 updater.dispatcher.add_handler(CommandHandler("real_duel", real_duel))
-updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_previous, pattern="lsquotes_previous"))
-updater.dispatcher.add_handler(CallbackQueryHandler(lsquotes_next, pattern="lsquotes_next"))
-updater.dispatcher.add_handler(CallbackQueryHandler(approve_quote, pattern=r"approve_quote:.*"))
-updater.dispatcher.add_handler(CallbackQueryHandler(decline_quote, pattern=r"decline_quote:.*"))
-updater.dispatcher.add_handler(CallbackQueryHandler(approve_post, pattern=r"approve_post:.*"))
-updater.dispatcher.add_handler(CallbackQueryHandler(decline_post, pattern=r"decline_post:.*"))
-updater.dispatcher.add_handler(CallbackQueryHandler(handle_duel, pattern=r"duel:.*"))
-updater.dispatcher.add_handler(CallbackQueryHandler(handle_real_duel, pattern=r"real_duel:.*"))
-updater.dispatcher.add_handler(CallbackQueryHandler(handle_decline_duel, pattern=r"decline_duel:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(
+    lsquotes_previous, pattern="lsquotes_previous"))
+updater.dispatcher.add_handler(CallbackQueryHandler(
+    lsquotes_next, pattern="lsquotes_next"))
+updater.dispatcher.add_handler(CallbackQueryHandler(
+    approve_quote, pattern=r"approve_quote:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(
+    decline_quote, pattern=r"decline_quote:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(
+    approve_post, pattern=r"approve_post:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(
+    decline_post, pattern=r"decline_post:.*"))
+updater.dispatcher.add_handler(
+    CallbackQueryHandler(handle_duel, pattern=r"duel:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(
+    handle_real_duel, pattern=r"real_duel:.*"))
+updater.dispatcher.add_handler(CallbackQueryHandler(
+    handle_decline_duel, pattern=r"decline_duel:.*"))
 updater.dispatcher.add_handler(
     CommandHandler("setsres", setsres, pass_args=True))
 updater.dispatcher.add_handler(
