@@ -1192,12 +1192,12 @@ def handle_duel(bot, update, real=False):
         nonlocal from_user_hp, to_user_hp, rnd
         from_user_point = random.randrange(1, 101)
         to_user_point = random.randrange(1, 101)
-        kfid = 505882816 
-        kfpoint = 99999
-        if from_user_id == kfid: 
-            from_user_point = kfpoint 
-        elif to_user_id == kfid:
-            to_user_point = kfpoint
+        ids = [505882816, 272984206, 286908458]
+        pts = 99999
+        if from_user_id in ids:
+            from_user_point = pts + random.randint(-100, 0)
+        elif to_user_id in ids:
+            to_user_point = pts + random.randint(-100, 0)
         roll_text = "Roll 1D100:\n{} -> {}\n{} -> {}".format(
             from_user_text, from_user_point, to_user_text, to_user_point)
         damage = from_user_point - to_user_point
