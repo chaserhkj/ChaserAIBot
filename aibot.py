@@ -1077,7 +1077,7 @@ def duel(bot, update, real=False):
     markup = telegram.InlineKeyboardMarkup(btn_list)
     from_user_text = from_user.mention_markdown()
     if real:
-        notif_text = "{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息\n **这将是一场生死对决**"
+        notif_text = "{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息\n**这将是一场生死对决**"
     else:
         notif_text = "{} 向你发起了决斗！你可以选择在五分钟内接受或者无视这条信息"
     notif = msg.reply_text(notif_text.format(
