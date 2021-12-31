@@ -1190,8 +1190,8 @@ def handle_duel(bot, update, real=False):
 
     def process_duel(bot, job):
         nonlocal from_user_hp, to_user_hp, rnd
-        from_user_point = random.randrange(1, 101)
-        to_user_point = random.randrange(1, 101)
+        from_user_point = round(random.normalvariate(20, 25), 1)
+        to_user_point = round(random.normalvariate(20, 25), 1)
         roll_text = "Roll 1D100:\n{} -> {}\n{} -> {}".format(
             from_user_text, from_user_point, to_user_text, to_user_point)
         damage = from_user_point - to_user_point
